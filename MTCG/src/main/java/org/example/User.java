@@ -1,8 +1,25 @@
 package org.example;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class User {
     private String username;
     private String password;
+    //alle Karten eines Users
+    private List<Card> stack = new ArrayList<>();
+    //die 4 Karten, welcher der User auswählt
+    private List<Card> deck = new ArrayList<>();
+    //temporäre Liste für alle User
+    public static List<User> users = new ArrayList<>();
+
+    public static List<User> getUsers() {
+        return users;
+    }
+
+    public static void setUsers(List<User> users) {
+        User.users = users;
+    }
 
     public User(String username, String password) {
         this.username = username;
@@ -23,5 +40,21 @@ public class User {
                 "username='" + username + '\'' +
                 ", password='" + password + '\'' +
                 '}';
+    }
+
+    public List<Card> getStack() {
+        return stack;
+    }
+
+    public void setStack(List<Card> stack) {
+        this.stack = stack;
+    }
+
+    public List<Card> getDeck() {
+        return deck;
+    }
+
+    public void setDeck(List<Card> deck) {
+        this.deck = deck;
     }
 }

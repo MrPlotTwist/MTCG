@@ -3,15 +3,19 @@ package org.example;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import static org.example.User.users;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Server {
     // Liste zur Speicherung von registrierten Benutzern
-    private static final List<User> users = new ArrayList<>();
+    private static int port;
 
-    public static void main(String[] args) {
-        int port = 10001;
+    public Server(int port) {
+        this.port = port;
+    }
+
+    public static void start() {
 
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println("Server läuft auf Port " + port);
@@ -58,33 +62,32 @@ public class Server {
 
                         User newUser = new User(username, password);
 
-// Prüfen, ob der Benutzername bereits existiert
+// Prüft, ob Username schon vorhanden ist
                         for (User user : users) {
                             if (user.getUsername().equals(username)) {
-                                System.out.println("Username '" + username + "' already exists.");
                                 usernameExists = true;
                                 break;
                             }
                         }
 
-// Nur hinzufügen, wenn der Benutzername nicht bereits existiert
+// Fügt neuen User hinzu
                         if (!usernameExists) {
 
                             users.add(newUser);
-                            String responseBody = "User created\n";
+                            String responseBody = "HTTP 201 - User created\n";
                             int contentLength = responseBody.getBytes("UTF-8").length;
 
-                            String httpResponse = "HTTP/1.1 201 Created\r\n" +
+                            String httpResponse = "HTTP/1.1 201\r\n" +
                                     "Content-Type: text/plain\r\n" +
                                     "Content-Length: " + contentLength + "\r\n" +
                                     "\r\n" +
-                                    "User created\n";
+                                    responseBody;
                             out.write(httpResponse.getBytes("UTF-8"));
                         } else {
-                            String responseBody = "User already exists\n";
+                            String responseBody = "HTTP 409 - User already exists\n";
                             int contentLength = responseBody.getBytes("UTF-8").length;
 
-                            String httpResponse = "HTTP/1.1 409 Conflict\r\n" +
+                            String httpResponse = "HTTP/1.1 409\r\n" +
                                     "Content-Type: text/plain\r\n" +
                                     "Content-Length: " + contentLength + "\r\n" +
                                     "\r\n" +
@@ -100,7 +103,7 @@ public class Server {
                             if (user.getUsername().equals(username) && user.getPassword().equals(password)) {
                                 String responseBody = "HTTP 200 with generated token for the user, here: " + userToken + "\r\n";
                                 int contentLength = responseBody.getBytes("UTF-8").length;
-                                String httpResponse = "HTTP/1.1 200 OK\r\n" +
+                                String httpResponse = "HTTP/1.1 200\r\n" +
                                         "Content-Type: text/plain\r\n" +
                                         "Content-Length: " + contentLength + "\r\n" +
                                         "\r\n" +
@@ -111,11 +114,10 @@ public class Server {
                             }
                         }
                         if (!usernameExists) {
-//                    System.out.println("User: " + username + " wird nicht hinzugefügt.");
                             String responseBody = "HTTP 401 - Login failed\r\n";
                             int contentLength = responseBody.getBytes("UTF-8").length;
 
-                            String httpResponse = "HTTP/1.1 401 Unauthorized\r\n" +
+                            String httpResponse = "HTTP/1.1 401\r\n" +
                                     "Content-Type: text/plain\r\n" +
                                     "Content-Length: " + contentLength + "\r\n" +
                                     "\r\n" +
