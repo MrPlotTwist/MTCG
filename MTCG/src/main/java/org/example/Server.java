@@ -39,36 +39,102 @@ public class Server {
                 while (!(line = in.readLine()).isEmpty()) {
                     // Kopfzeilen überspringen
                 }
+                //body wird "erstellt"
                 while (in.ready()) {
                     body.append((char) in.read());
                 }
 
-                System.out.println("Empfangener Body: " + body);
+                String[] requestLineParts = requestLine.split(" ");
+                String url = requestLineParts[1];
 
-                // Parse JSON-Daten und erstelle User
                 String[] userData = body.toString().replaceAll("[{}\"]", "").split(",");
                 String username = userData[0].split(":")[1].trim();
                 String password = userData[1].split(":")[1].trim();
+                boolean usernameExists = false;
 
-                User newUser = new User(username, password);
-                users.add(newUser);
-                for (User user : users) {
-                    if (user.getUsername().equals(username)) {
-                        System.out.println("Username '" + username + "' already exists.");
-                        System.out.println("User" + username + "passwort: " + password + " wird entfernt");
-                        users.remove(user);
-                    }
+                switch (url) {
+                    case "/users":
+                        System.out.println("Empfangener Body: " + body);
+
+                        User newUser = new User(username, password);
+
+// Prüfen, ob der Benutzername bereits existiert
+                        for (User user : users) {
+                            if (user.getUsername().equals(username)) {
+                                System.out.println("Username '" + username + "' already exists.");
+                                usernameExists = true;
+                                break;
+                            }
+                        }
+
+// Nur hinzufügen, wenn der Benutzername nicht bereits existiert
+                        if (!usernameExists) {
+
+                            users.add(newUser);
+                            String responseBody = "User created\n";
+                            int contentLength = responseBody.getBytes("UTF-8").length;
+
+                            String httpResponse = "HTTP/1.1 201 Created\r\n" +
+                                    "Content-Type: text/plain\r\n" +
+                                    "Content-Length: " + contentLength + "\r\n" +
+                                    "\r\n" +
+                                    "User created\n";
+                            out.write(httpResponse.getBytes("UTF-8"));
+                        } else {
+                            String responseBody = "User already exists\n";
+                            int contentLength = responseBody.getBytes("UTF-8").length;
+
+                            String httpResponse = "HTTP/1.1 409 Conflict\r\n" +
+                                    "Content-Type: text/plain\r\n" +
+                                    "Content-Length: " + contentLength + "\r\n" +
+                                    "\r\n" +
+                                    responseBody;
+                            out.write(httpResponse.getBytes("UTF-8"));
+                        }
+                        break;
+                    case "/sessions":
+                        System.out.println("Empfangener Body: " + body);
+
+                        for (User user : users) {
+                            String userToken = user.getUsername() + "-mtcgToken";
+                            if (user.getUsername().equals(username) && user.getPassword().equals(password)) {
+                                String responseBody = "HTTP 200 with generated token for the user, here: " + userToken + "\r\n";
+                                int contentLength = responseBody.getBytes("UTF-8").length;
+                                String httpResponse = "HTTP/1.1 200 OK\r\n" +
+                                        "Content-Type: text/plain\r\n" +
+                                        "Content-Length: " + contentLength + "\r\n" +
+                                        "\r\n" +
+                                        responseBody;
+                                out.write(httpResponse.getBytes("UTF-8"));
+                                usernameExists = true;
+                                break;
+                            }
+                        }
+                        if (!usernameExists) {
+//                    System.out.println("User: " + username + " wird nicht hinzugefügt.");
+                            String responseBody = "HTTP 401 - Login failed\r\n";
+                            int contentLength = responseBody.getBytes("UTF-8").length;
+
+                            String httpResponse = "HTTP/1.1 401 Unauthorized\r\n" +
+                                    "Content-Type: text/plain\r\n" +
+                                    "Content-Length: " + contentLength + "\r\n" +
+                                    "\r\n" +
+                                    responseBody;
+                            out.write(httpResponse.getBytes("UTF-8"));
+                            break;
+                        }
+                    default:
+                        String httpResponse = "HTTP/1.1 400 Bad Request\r\n" +
+                                "Content-Type: text/plain\r\n" +
+                                "Content-Length: 12\r\n" +
+                                "\r\n" +
+                                "Bad Request!";
+                        out.write(httpResponse.getBytes("UTF-8"));
+                        break;
                 }
 
-                // HTTP 201 Created und den User zurückgeben
-                String httpResponse = "HTTP/1.1 201 Created\r\n" +
-                        "Content-Type: application/json\r\n" +
-                        "Content-Length: " + newUser.toString().length() + "\r\n" +
-                        "\r\n" +
-                        newUser.toString();
-                out.write(httpResponse.getBytes("UTF-8"));
             } else {
-                // Wenn es keine POST-Anfrage ist, sende eine Bad Request-Antwort
+                //wenn keine POST request
                 String httpResponse = "HTTP/1.1 400 Bad Request\r\n" +
                         "Content-Type: text/plain\r\n" +
                         "Content-Length: 12\r\n" +
