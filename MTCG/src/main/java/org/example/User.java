@@ -6,6 +6,7 @@ import java.util.List;
 public class User {
     private String username;
     private String password;
+    private int coins;
     //alle Karten eines Users
     private List<Card> stack = new ArrayList<>();
     //die 4 Karten, welcher der User auswählt
@@ -13,17 +14,26 @@ public class User {
     //temporäre Liste für alle User
     public static List<User> users = new ArrayList<>();
 
+    public User(String username, String password) {
+        this.username = username;
+        this.password = password;
+        this.coins = 20;
+    }
+
+    public int getCoins() {
+        return coins;
+    }
+
+    public void setCoins(int coins) {
+        this.coins = coins;
+    }
+
     public static List<User> getUsers() {
         return users;
     }
 
     public static void setUsers(List<User> users) {
         User.users = users;
-    }
-
-    public User(String username, String password) {
-        this.username = username;
-        this.password = password;
     }
 
     public String getUsername() {
@@ -55,6 +65,10 @@ public class User {
     }
 
     public void setDeck(List<Card> deck) {
-        this.deck = deck;
+        if (deck.size() == 4) {
+            this.deck = deck;
+        } else {
+            throw new IllegalArgumentException("Deck must contain exactly 4 cards.");
+        }
     }
 }

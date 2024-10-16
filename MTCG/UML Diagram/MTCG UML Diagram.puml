@@ -1,0 +1,65 @@
+@startuml
+
+package org.example {
+
+  class Card {
+    - String name
+    - int damage
+    - String ElementType
+    - String CardType
+
+    + Card(String name, int damage, String elementType, String cardType)
+    + String getCardType()
+    + void setCardType(String cardType)
+    + String getName()
+    + void setName(String name)
+    + int getDamage()
+    + void setDamage(int damage)
+    + String getElementType()
+    + void setElementType(String elementType)
+  }
+
+  class Package {
+      - List<Card> cards
+
+      + Package()
+      + Package(List<Card> cards)
+      + List<Card> getCards()
+    }
+
+    Package --> "1..*" Card : contains
+
+  class User {
+      - String username
+      - String password
+
+      + User(String username, String password)
+      + String getUsername()
+      + String getPassword()
+    }
+
+    class Server {
+      - static int port
+
+      + Server(int port)
+      + static void start()
+      + static void handleClient(Socket clientSocket)
+
+      - void handlePOSTRequest(String requestLine, BufferedReader in, OutputStream out)
+    }
+
+    Server --> "1..*" User : manages
+
+    class Main {
+        + static void main(String[] args)
+    }
+
+Main --> Server : starts
+
+}
+
+
+
+
+
+@enduml

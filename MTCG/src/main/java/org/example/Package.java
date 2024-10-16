@@ -5,6 +5,7 @@ import java.util.List;
 
 public class Package {
     private List<Card> cards;
+
     public Package() {
         getCards();
     }

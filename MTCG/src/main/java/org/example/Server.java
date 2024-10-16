@@ -3,7 +3,9 @@ package org.example;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+
 import static org.example.User.users;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,7 +38,7 @@ public class Server {
             String requestLine = in.readLine();
             System.out.println("Anfrage: " + requestLine);
 
-            // Verarbeitung nur für POST-Anfragen
+            //POST ANFRAGEN
             if (requestLine != null && requestLine.startsWith("POST")) {
                 StringBuilder body = new StringBuilder();
                 String line;

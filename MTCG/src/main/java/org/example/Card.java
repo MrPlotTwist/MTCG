@@ -4,24 +4,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Card {
+    public static final String SPELL_CARD = "Spell-card";
+    public static final String MONSTER_CARD = "Monster-card";
+
     private String name;
     private int damage;
-    private String ElementType;
-    private String CardType;
+    private String elementType;
+    private String cardType;
+
 
     public Card(String name, int damage, String elementType, String cardType) {
+        if (!cardType.equals(MONSTER_CARD) && !cardType.equals(SPELL_CARD)) {
+            throw new IllegalArgumentException("Invalid card type: " + cardType + ". It must be either 'Spell-card' or 'Monster-card'.");
+        }
+
         this.name = name;
         this.damage = damage;
-        ElementType = elementType;
-        CardType = cardType;
+        this.elementType = elementType;
+        this.cardType = cardType;
     }
 
     public String getCardType() {
-        return CardType;
+        return cardType;
     }
 
     public void setCardType(String cardType) {
-        CardType = cardType;
+        cardType = cardType;
     }
 
     public String getName() {
@@ -41,10 +49,10 @@ public class Card {
     }
 
     public String getElementType() {
-        return ElementType;
+        return elementType;
     }
 
     public void setElementType(String elementType) {
-        ElementType = elementType;
+        elementType = elementType;
     }
 }
