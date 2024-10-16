@@ -2,22 +2,27 @@
 
 package org.example {
 
-  class Card {
-    - String name
-    - int damage
-    - String ElementType
-    - String CardType
+class User {
+        - String username
+        - String password
+        - int coins
+        - List<Card> stack
+        - List<Card> deck
+        + static List<User> users
 
-    + Card(String name, int damage, String elementType, String cardType)
-    + String getCardType()
-    + void setCardType(String cardType)
-    + String getName()
-    + void setName(String name)
-    + int getDamage()
-    + void setDamage(int damage)
-    + String getElementType()
-    + void setElementType(String elementType)
-  }
+        + User(String username, String password)
+        + int getCoins()
+        + void setCoins(int coins)
+        + static List<User> getUsers()
+        + static void setUsers(List<User> users)
+        + String getUsername()
+        + String getPassword()
+        + String toString()
+        + List<Card> getStack()
+        + void setStack(List<Card> stack)
+        + List<Card> getDeck()
+        + void setDeck(List<Card> deck)
+    }
 
   class Package {
       - List<Card> cards
@@ -28,15 +33,6 @@ package org.example {
     }
 
     Package --> "1..*" Card : contains
-
-  class User {
-      - String username
-      - String password
-
-      + User(String username, String password)
-      + String getUsername()
-      + String getPassword()
-    }
 
     class Server {
       - static int port
@@ -56,10 +52,25 @@ package org.example {
 
 Main --> Server : starts
 
+class Card {
+        + static final String SPELL_CARD
+        + static final String MONSTER_CARD
+        - String name
+        - int damage
+        - String elementType
+        - String cardType
+
+        + Card(String name, int damage, String elementType, String cardType)
+        + String getCardType()
+        + void setCardType(String cardType)
+        + String getName()
+        + void setName(String name)
+        + int getDamage()
+        + void setDamage(int damage)
+        + String getElementType()
+        + void setElementType(String elementType)
+    }
+
 }
-
-
-
-
 
 @enduml
