@@ -1,10 +1,10 @@
-package org.example;
+package org.mtcg;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import static org.example.User.users;
+import static org.mtcg.User.users;
 
 import java.util.ArrayList;
 import java.util.List;

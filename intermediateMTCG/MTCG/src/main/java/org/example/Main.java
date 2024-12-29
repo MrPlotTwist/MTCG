@@ -1,4 +1,4 @@
-package org.example;
+package org.mtcg;
 
 public class Main {
 

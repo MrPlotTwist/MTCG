@@ -1,6 +1,6 @@
 @startuml
 
-package org.example {
+package org.mtcg {
 
   class Card {
     - String name

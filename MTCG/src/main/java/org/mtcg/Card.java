@@ -1,7 +1,4 @@
-package org.example;
-
-import java.util.ArrayList;
-import java.util.List;
+package org.mtcg;
 
 public class Card {
     public static final String SPELL_CARD = "Spell-card";

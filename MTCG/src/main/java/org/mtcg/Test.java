@@ -1,11 +1,11 @@
-package org.example;
+package org.mtcg;
 
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.example.User.users;
+import static org.mtcg.User.users;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ServerTest {
