@@ -2,6 +2,7 @@
 
 TODO LIST:
 
-Mehr Tests hinzufügen
-Serverklasse nochmal kontrollieren
-Maybe andere UserListe machen idk
+Alles in mehrer Klassen aufteilen
+curl skript voll Funktionsfähig machen
+
+PostgreSQL einbinden
