@@ -86,12 +86,12 @@ class UserTest {
     @Test
         void testCreateCard () {
         //Karte erfolgreich erstellt
-            Card newCard = new Card("Glurak", 20, "Fire", Card.MONSTER_CARD);
+            Card newCard = new Card("1223432dfg", "Glurak", 20, "Fire", Card.MONSTER_CARD);
             assertNotNull(newCard, "Card should not be null!");
 
             //Karte hat falsche werte -> wird nicht erstellt
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            new Card("Schiggi", 30, "Water", "Notcorrect");
+            new Card("sdf", "Schiggi", 30, "Water", "Notcorrect");
         });
         assertEquals("Invalid card type: Notcorrect. It must be either 'Spell-card' or 'Monster-card'.", exception.getMessage());
         }
@@ -102,11 +102,11 @@ class UserTest {
     @Test
     //ob alle Karten erstellt und in Liste sind
         void PackageList() {
-        Card card1 = new Card("Schiggi", 30, "Water", Card.MONSTER_CARD);
-        Card card2 = new Card("Glumanda", 40, "Fire", Card.MONSTER_CARD);
-        Card card3 = new Card("Bisasam", 35, "Grass", Card.MONSTER_CARD);
-        Card card4 = new Card("Pikachu", 50, "Electric", Card.MONSTER_CARD);
-        Card card5 = new Card("Hydropumpe", 60, "Water", Card.SPELL_CARD);
+        Card card1 = new Card("ssss", "Schiggi", 30, "Water", Card.MONSTER_CARD);
+        Card card2 = new Card("lolo","Glumanda", 40, "Fire", Card.MONSTER_CARD);
+        Card card3 = new Card("sdfsdfsdf","Bisasam", 35, "Grass", Card.MONSTER_CARD);
+        Card card4 = new Card("sssyxcv","Pikachu", 50, "Electric", Card.MONSTER_CARD);
+        Card card5 = new Card("yyy","Hydropumpe", 60, "Water", Card.SPELL_CARD);
 
         List<Card> packageTest = new ArrayList<>();
         packageTest.add(card1);
