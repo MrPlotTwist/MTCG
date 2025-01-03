@@ -3,8 +3,6 @@ package org.mtcg;
 import java.io.*;
 import java.net.Socket;
 
-//import static org.mtcg.User.users;
-
 public class ClientHandling {
 
     public static void handleClient(Socket clientSocket) {
@@ -15,18 +13,21 @@ public class ClientHandling {
             String requestLine = in.readLine();
             System.out.println("Anfrage: " + requestLine);
 
-            // Sicherstellen, dass die Anfrage eine POST-Anfrage ist
-            if (requestLine != null && requestLine.startsWith("POST")) {
+            if (requestLine != null) {
+                String[] requestLineParts = requestLine.split(" ");
+                if (requestLineParts.length < 2) {
+                    sendResponse(out, 400, "{\"message\":\"Bad Request\"}");
+                    return;
+                }
+
+                String method = requestLineParts[0];
+                String url = requestLineParts[1];
                 StringBuilder body = new StringBuilder();
                 String line;
                 String authorizationHeader = null;
 
                 // Kopfzeilen auslesen
                 while (!(line = in.readLine()).isEmpty()) {
-                    // Header ausgeben, um zu prüfen, was empfangen wurde
-                    //System.out.println("Header: " + line);
-
-                    // Authorization-Header suchen
                     if (line.startsWith("Authorization:")) {
                         authorizationHeader = line.substring("Authorization:".length()).trim();
                     }
@@ -37,110 +38,25 @@ public class ClientHandling {
                     body.append((char) in.read());
                 }
 
-                // Debug-Ausgaben
-                //System.out.println("Empfangener Authorization-Header: " + authorizationHeader);
-                //System.out.println("Body: " + body);
-
-                String[] requestLineParts = requestLine.split(" ");
-                String url = requestLineParts[1];
-
-                // Body parsen
-//                String[] userData = body.toString().replaceAll("[{}\"]", "").split(",");
-//                String username = userData[0].split(":")[1].trim();
-//                String password = userData[1].split(":")[1].trim();
-
-                boolean usernameExists = false;
-
-                switch (url) {
-                    case "/users":
-                        UserHandling.handleUserRequest(body.toString(), out);
+                // Auf die entsprechende Klasse basierend auf der HTTP-Methode zugreifen
+                switch (method) {
+                    case "GET":
+                        GETRequestHandling.handleGetRequest(url, authorizationHeader, out);
                         break;
-
-                    case "/sessions":
-                        SessionHandling.handleSessionRequest(body.toString(), out);
+                    case "POST":
+                        POSTRequestHandling.handlePostRequest(url, body.toString(), authorizationHeader, out);
                         break;
-
-                    case "/packages":
-                        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-                            sendResponse(out, 401, "{\"message\":\"Unauthorized: Missing or invalid token\"}");
-                            return;
-                        }
-
-                        // Token extrahieren und ausgeben
-                        String adminToken = authorizationHeader.substring("Bearer ".length()).trim();
-                        System.out.println("Extrahierter Token: " + adminToken);
-
-                        // Anfrage verarbeiten
-                        PackageHandling.handlePackageRequest(body.toString(), out);
+                    case "PUT":
+                        PUTRequestHandling.handlePutRequest(url, body.toString(), authorizationHeader, out);
                         break;
-
-                    case "/transactions/packages":
-                        System.out.println("your are here");
-
-                        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-                            sendResponse(out, 401, "{\"message\":\"Unauthorized: Missing or invalid token\"}");
-                            return;
-                        }
-                        String userToken = authorizationHeader.substring("Bearer ".length()).trim();
-                        System.out.println("Extrahierter Token: " + userToken);
-                        String username = userToken.split("-")[0];
-//                        System.out.println(username);
-                        TransactionHandling.handleTransactionRequest(body.toString(), out, username);
-                        break;
-
                     default:
-                        sendResponse(out, 400, "{\"message\":\"Bad Request\"}");
+                        sendResponse(out, 405, "{\"message\":\"Method Not Allowed\"}");
                         break;
                 }
-
-            } else if (requestLine != null && requestLine.startsWith("GET")) {
-                StringBuilder body = new StringBuilder();
-                String line;
-                String authorizationHeader = null;
-
-                // Kopfzeilen auslesen
-                while (!(line = in.readLine()).isEmpty()) {
-                    // Header ausgeben, um zu prüfen, was empfangen wurde
-                    //System.out.println("Header: " + line);
-
-                    // Authorization-Header suchen
-                    if (line.startsWith("Authorization:")) {
-                        authorizationHeader = line.substring("Authorization:".length()).trim();
-                    }
-                }
-
-                // Body lesen, falls vorhanden
-                while (in.ready()) {
-                    body.append((char) in.read());
-                }
-
-                // Debug-Ausgaben
-                //System.out.println("Empfangener Authorization-Header: " + authorizationHeader);
-                //System.out.println("Body: " + body);
-
-                String[] requestLineParts = requestLine.split(" ");
-                String url = requestLineParts[1];
-
-                // Body parsen
-//                String[] userData = body.toString().replaceAll("[{}\"]", "").split(",");
-//                String username = userData[0].split(":")[1].trim();
-//                String password = userData[1].split(":")[1].trim();
-
-                boolean usernameExists = false;
-
-                switch (url) {
-                    case "/cards":
-                        System.out.println("AAAAAAAAAAAAAAAAAAA are here");
-                        break;
-
-                    default:
-                        sendResponse(out, 400, "{\"message\":\"Bad Request\"}");
-                }
-            }
-
-            else {
+            } else {
                 sendResponse(out, 400, "{\"message\":\"Bad Request\"}");
             }
+
         } catch (IOException e) {
             e.printStackTrace();
         } finally {

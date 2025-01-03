@@ -7,19 +7,47 @@ public class User {
     private String username;
     private String password;
     private int coins;
-    //alle Karten eines Users
     private List<Card> stack = new ArrayList<>();
-    //die 4 Karten, welcher der User auswählt
     private List<Card> deck = new ArrayList<>();
-    //temporäre Liste für alle User
-//    public static List<User> users = new ArrayList<>();
 
+    // Zusätzliche Felder
+    private String name; // Benutzername (z. B. "Max Mustermann")
+    private String bio;  // Kurzbeschreibung (z. B. "Gamer, Entwickler, etc.")
+    private String image; // Darstellung (z. B. ":-)")
+
+    // Konstruktor
     public User(String username, String password) {
         this.username = username;
         this.password = password;
-        this.coins = 20;
+        this.coins = 20; // Standardwert
     }
 
+    // Getter und Setter für neue Felder
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getBio() {
+        return bio;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
+
+    // Bestehende Getter und Setter
     public int getCoins() {
         return coins;
     }
@@ -28,28 +56,12 @@ public class User {
         this.coins = coins;
     }
 
-//    public static List<User> getUsers() {
-//        return users;
-//    }
-
-//    public static void setUsers(List<User> users) {
-//        User.users = users;
-//    }
-
     public String getUsername() {
         return username;
     }
 
     public String getPassword() {
         return password;
-    }
-
-    @Override
-    public String toString() {
-        return "User{" +
-                "username='" + username + '\'' +
-                ", password='" + password + '\'' +
-                '}';
     }
 
     public List<Card> getStack() {
@@ -70,5 +82,18 @@ public class User {
         } else {
             throw new IllegalArgumentException("Deck must contain exactly 4 cards.");
         }
+    }
+
+    // toString-Methode erweitern
+    @Override
+    public String toString() {
+        return "User{" +
+                "username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                ", coins=" + coins +
+                ", name='" + name + '\'' +
+                ", bio='" + bio + '\'' +
+                ", image='" + image + '\'' +
+                '}';
     }
 }

@@ -19,9 +19,8 @@ public class TransactionHandling {
                 return;
             }
 
-
-            // Wähle ein zufälliges Package
-            int packageId = getRandomPackage(conn);
+            // Wähle das älteste verfügbare Package
+            int packageId = getOldestPackage(conn);
             if (packageId == -1) {
                 sendResponse(out, 404, "{\"message\":\"No more packages available\"}");
                 return;
@@ -71,7 +70,6 @@ public class TransactionHandling {
         }
     }
 
-
     private static void reduceUserCoins(Connection conn, String username, OutputStream out) {
         try {
             String query = "UPDATE users SET coins = coins - ? WHERE username = ?";
@@ -96,14 +94,17 @@ public class TransactionHandling {
         }
     }
 
-    private static int getRandomPackage(Connection conn) throws Exception {
-        String query = "SELECT id FROM packages ORDER BY RANDOM() LIMIT 1";
+    // Wählt das älteste verfügbare Paket basierend auf der niedrigsten ID
+    private static int getOldestPackage(Connection conn) throws Exception {
+        String query = "SELECT id FROM packages ORDER BY id ASC LIMIT 1";
         try (PreparedStatement stmt = conn.prepareStatement(query)) {
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                return rs.getInt("id");
+                int packageId = rs.getInt("id");
+                System.out.println("Ältestes verfügbares Paket: " + packageId);
+                return packageId;
             } else {
-                return -1; // Kein Package verfügbar
+                return -1; // Kein Paket verfügbar
             }
         }
     }
@@ -153,7 +154,6 @@ public class TransactionHandling {
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
                 System.out.println("Package mit ID " + packageId + " wurde gelöscht.");
-//                logRemainingPackages(conn);
             } else {
                 System.out.println("Package mit ID " + packageId + " konnte nicht gelöscht werden.");
             }

@@ -58,18 +58,29 @@ public class PackageHandling {
     }
 
     private static void insertCardAndLinkToPackage(Connection conn, String id, String name, double damage, int packageId) throws Exception {
-        String insertCardQuery = "INSERT INTO cards (id, name, damage, element_type, card_type) VALUES (CAST(? AS UUID), ?, ?, ?, ?) ON CONFLICT DO NOTHING";
-        String linkCardToPackageQuery = "INSERT INTO package_cards (package_id, card_id) VALUES (?, CAST(? AS UUID))";
+        String insertCardQuery = """
+        INSERT INTO cards (id, name, damage, element_type, card_type)
+        VALUES (CAST(? AS UUID), ?, ?, ?, ?)
+        ON CONFLICT DO NOTHING
+    """;
+        String linkCardToPackageQuery = """
+        INSERT INTO package_cards (package_id, card_id)
+        VALUES (?, CAST(? AS UUID))
+    """;
 
         try (PreparedStatement insertCardStmt = conn.prepareStatement(insertCardQuery);
              PreparedStatement linkCardStmt = conn.prepareStatement(linkCardToPackageQuery)) {
+
+            // Dynamisch den Elementtyp und Kartentyp basierend auf dem Namen bestimmen
+            String elementType = getElementTypeFromName(name);
+            String cardType = getCardTypeFromName(name);
 
             // Karte in die Datenbank einfügen
             insertCardStmt.setString(1, id);
             insertCardStmt.setString(2, name);
             insertCardStmt.setDouble(3, damage);
-            insertCardStmt.setString(4, "fire"); // Beispiel-Elementtyp
-            insertCardStmt.setString(5, "monster"); // Beispiel-Kartentyp
+            insertCardStmt.setString(4, elementType);
+            insertCardStmt.setString(5, cardType);
             insertCardStmt.executeUpdate();
 
             // Karte mit dem Paket verknüpfen
@@ -77,7 +88,29 @@ public class PackageHandling {
             linkCardStmt.setString(2, id);
             linkCardStmt.executeUpdate();
         }
-}
+    }
+
+    private static String getElementTypeFromName(String name) {
+        if (name.toLowerCase().contains("water")) {
+            return "water";
+        } else if (name.toLowerCase().contains("fire")) {
+            return "fire";
+        } else {
+            return "normal";
+        }
+    }
+
+    private static String getCardTypeFromName(String name) {
+        if (name.toLowerCase().contains("goblin") || name.toLowerCase().contains("dragon") ||
+                name.toLowerCase().contains("ork") || name.toLowerCase().contains("knight") ||
+                name.toLowerCase().contains("kraken") || name.toLowerCase().contains("elf")) {
+            return "monster";
+        } else if (name.toLowerCase().contains("spell")) {
+            return "spell";
+        }
+        return "unknown"; // Standardwert für unbekannte Kartentypen
+    }
+
 
     private static void sendResponse(OutputStream out, int statusCode, String body) throws Exception {
         ClientHandling.sendResponse(out, statusCode, body);

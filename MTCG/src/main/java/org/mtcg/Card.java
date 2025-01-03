@@ -1,59 +1,51 @@
 package org.mtcg;
 
 public class Card {
-    public static final String SPELL_CARD = "Spell-card";
-    public static final String MONSTER_CARD = "Monster-card";
-
-    private final String id;
+    private String id;
     private String name;
+    private String type; // "Monster" oder "Spell"
+    private String element; // "Fire", "Water", "Normal"
     private double damage;
-    private String elementType;
-    private String cardType;
+    private String owner; // Besitzer der Karte
 
-
-    public Card(String id, String name, double damage, String elementType, String cardType) {
-//        if (!cardType.equals(MONSTER_CARD) && !cardType.equals(SPELL_CARD)) {
-//            throw new IllegalArgumentException("Invalid card type: " + cardType + ". It must be either 'Spell-card' or 'Monster-card'.");
-//        }
-
+    public Card(String id, String name, String type, String element, double damage) {
         this.id = id;
         this.name = name;
+        this.type = type;
+        this.element = element;
         this.damage = damage;
-        this.elementType = elementType;
-        this.cardType = cardType;
     }
 
-    public String getId() { return id; }
-
-    public String getCardType() {
-        return cardType;
-    }
-
-    public void setCardType(String cardType) {
-        cardType = cardType;
+    public String getId() {
+        return id;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public String getType() {
+        return type;
+    }
+
+    public String getElement() {
+        return element;
     }
 
     public double getDamage() {
         return damage;
     }
 
-    public void setDamage(double damage) {
-        this.damage = damage;
+    public String getOwner() {
+        return owner;
     }
 
-    public String getElementType() {
-        return elementType;
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+    @Override
+    public String toString() {
+        return name + " (" + element + ", " + type + ")";
     }
 
-    public void setElementType(String elementType) {
-        elementType = elementType;
-    }
 }
