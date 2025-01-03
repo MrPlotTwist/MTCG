@@ -12,7 +12,7 @@ public class User {
     //die 4 Karten, welcher der User auswählt
     private List<Card> deck = new ArrayList<>();
     //temporäre Liste für alle User
-    public static List<User> users = new ArrayList<>();
+//    public static List<User> users = new ArrayList<>();
 
     public User(String username, String password) {
         this.username = username;
@@ -28,13 +28,13 @@ public class User {
         this.coins = coins;
     }
 
-    public static List<User> getUsers() {
-        return users;
-    }
+//    public static List<User> getUsers() {
+//        return users;
+//    }
 
-    public static void setUsers(List<User> users) {
-        User.users = users;
-    }
+//    public static void setUsers(List<User> users) {
+//        User.users = users;
+//    }
 
     public String getUsername() {
         return username;
