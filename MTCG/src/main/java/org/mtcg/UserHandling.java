@@ -3,6 +3,8 @@ package org.mtcg;
 import java.io.OutputStream;
 import java.io.IOException;
 
+import static org.mtcg.ClientHandling.sendResponse;
+
 public class UserHandling {
 
     public static void handleUserRequest(String body, OutputStream out) throws IOException {
@@ -27,15 +29,5 @@ public class UserHandling {
             e.printStackTrace();
             sendResponse(out, 500, "{\"message\":\"Internal Server Error\"}");
         }
-    }
-
-    private static void sendResponse(OutputStream out, int statusCode, String body) throws IOException {
-        String response = "HTTP/1.1 " + statusCode + " \r\n" +
-                "Content-Type: application/json\r\n" +
-                "Content-Length: " + body.length() + "\r\n" +
-                "\r\n" +
-                body;
-        out.write(response.getBytes());
-        out.flush();
     }
 }

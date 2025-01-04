@@ -17,6 +17,8 @@ public class BattleHandling {
         int rounds = 0;
         int player1Wins = 0;
         int player2Wins = 0;
+        boolean player1UsedBooster = false;
+        boolean player2UsedBooster = false;
         List<String> log = new ArrayList<>();
 
         log.add("Starting battle between " + player1 + " and " + player2);
@@ -65,9 +67,25 @@ public class BattleHandling {
                 continue; // Nächste Runde starten
             }
 
+            // Booster-Logik
+            boolean player1Booster = false;
+            boolean player2Booster = false;
+
+            if (!player1UsedBooster && Math.random() > 0.7) { // 30% Chance, den Booster einzusetzen
+                player1Booster = true;
+                player1UsedBooster = true;
+                log.add(player1 + " uses a damage booster on " + card1.getName() + "!");
+            }
+
+            if (!player2UsedBooster && Math.random() > 0.7) { // 30% Chance, den Booster einzusetzen
+                player2Booster = true;
+                player2UsedBooster = true;
+                log.add(player2 + " uses a damage booster on " + card2.getName() + "!");
+            }
+
             // Schaden berechnen
-            double damage1 = calculateDamage(card1, card2);
-            double damage2 = calculateDamage(card2, card1);
+            double damage1 = calculateDamage(card1, card2, player1Booster);
+            double damage2 = calculateDamage(card2, card1, player2Booster);
 
             log.add(card1.getName() + " deals " + damage1 + " damage");
             log.add(card2.getName() + " deals " + damage2 + " damage");
@@ -116,6 +134,20 @@ public class BattleHandling {
         return new BattleResult(true, log.get(log.size() - 1), log);
     }
 
+    private static double calculateDamage(Card attacker, Card defender, boolean applyBooster) {
+        double baseDamage = attacker.getDamage();
+        if (applyBooster) {
+            baseDamage *= 1.5; // 50% mehr Schaden durch Booster
+        }
+
+        if (attacker.getType().equals("Spell") || defender.getType().equals("Spell")) {
+            double multiplier = getElementMultiplier(attacker.getElement(), defender.getElement());
+            return baseDamage * multiplier;
+        }
+
+        return baseDamage;
+    }
+
 
 
     private static String checkSpecialCases(Card card1, Card card2) {
@@ -150,7 +182,6 @@ public class BattleHandling {
         if (attackerElement.equals("Water") && defenderElement.equals("Fire")) return 2.0;
         if (attackerElement.equals("Fire") && defenderElement.equals("Normal")) return 2.0;
         if (attackerElement.equals("Normal") && defenderElement.equals("Water")) return 2.0;
-        if (defenderElement.equals("Normal") && attackerElement.equals("Normal")) return 2;
         if (defenderElement.equals("Water") && attackerElement.equals("Fire")) return 0.5;
         if (defenderElement.equals("Fire") && attackerElement.equals("Normal")) return 0.5;
         if (defenderElement.equals("Normal") && attackerElement.equals("Water")) return 0.5;

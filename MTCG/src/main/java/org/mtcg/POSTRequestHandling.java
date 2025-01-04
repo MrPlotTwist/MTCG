@@ -5,18 +5,40 @@ import java.util.Map;
 
 import com.google.gson.Gson;
 
+import static org.mtcg.ClientHandling.sendResponse;
+
 public class POSTRequestHandling {
 
     public static void handlePostRequest(String url, String body, String authorizationHeader, OutputStream out) {
         try {
             if (url.equals("/users")) {
-                handleUserRequest(body, out);
+                UserHandling.handleUserRequest(body, out);
             } else if (url.equals("/sessions")) {
-                handleSessionRequest(body, out);
+                SessionHandling.handleSessionRequest(body, out);
             } else if (url.equals("/packages")) {
-                handlePackageRequest(body, authorizationHeader, out);
+                if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+                    sendResponse(out, 401, "{\"message\":\"Unauthorized: Missing or invalid token\"}");
+                    return;
+                }
+
+                // Token extrahieren und ausgeben
+                String adminToken = authorizationHeader.substring("Bearer ".length()).trim();
+                System.out.println("Extrahierter Token: " + adminToken);
+
+                // Anfrage verarbeiten
+                PackageHandling.handlePackageRequest(body, out);
             } else if (url.equals("/transactions/packages")) {
-                handleTransactionRequest(body, authorizationHeader, out);
+                if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+                    sendResponse(out, 401, "{\"message\":\"Unauthorized: Missing or invalid token\"}");
+                    return;
+                }
+
+                // Token extrahieren und Benutzername bestimmen
+                String userToken = authorizationHeader.substring("Bearer ".length()).trim();
+                System.out.println("Extrahierter Token: " + userToken);
+                String username = userToken.split("-")[0];
+
+                TransactionHandling.handleTransactionRequest(body, out, username);
             } else if (url.equals("/battles")) {
                 handleBattleRequest(authorizationHeader, out);
             } else if (url.equals("/tradings")) {
@@ -36,41 +58,7 @@ public class POSTRequestHandling {
         }
     }
 
-    private static void handleUserRequest(String body, OutputStream out) throws Exception {
-        UserHandling.handleUserRequest(body, out);
-    }
-
-    private static void handleSessionRequest(String body, OutputStream out) throws Exception {
-        SessionHandling.handleSessionRequest(body, out);
-    }
-
-    private static void handlePackageRequest(String body, String authorizationHeader, OutputStream out) throws Exception {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            sendResponse(out, 401, "{\"message\":\"Unauthorized: Missing or invalid token\"}");
-            return;
-        }
-
-        // Token extrahieren und ausgeben
-        String adminToken = authorizationHeader.substring("Bearer ".length()).trim();
-        System.out.println("Extrahierter Token: " + adminToken);
-
-        // Anfrage verarbeiten
-        PackageHandling.handlePackageRequest(body, out);
-    }
-
-    private static void handleTransactionRequest(String body, String authorizationHeader, OutputStream out) throws Exception {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            sendResponse(out, 401, "{\"message\":\"Unauthorized: Missing or invalid token\"}");
-            return;
-        }
-
-        // Token extrahieren und Benutzername bestimmen
-        String userToken = authorizationHeader.substring("Bearer ".length()).trim();
-        System.out.println("Extrahierter Token: " + userToken);
-        String username = userToken.split("-")[0];
-
-        TransactionHandling.handleTransactionRequest(body, out, username);
-    }
+    private static final Object battleLock = new Object();
 
     public static void handleBattleRequest(String authorizationHeader, OutputStream out) throws Exception {
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
@@ -80,24 +68,52 @@ public class POSTRequestHandling {
 
         String userToken = authorizationHeader.substring("Bearer ".length()).trim();
         String username = userToken.split("-")[0];
+        System.out.println("[DEBUG] Battle request received from user: " + username);
 
-        // Füge Spieler zur Battle-Queue hinzu
-        Database.addToBattleQueue(username);
+        synchronized (battleLock) {
+            // Füge Spieler zur Battle-Queue hinzu
+            Database.addToBattleQueue(username);
+            System.out.println("[DEBUG] User " + username + " added to battle queue");
 
-        String opponent = Database.getFirstOpponent(username);
-        if (opponent == null) {
-            sendResponse(out, 200, "{\"message\":\"Waiting for an opponent...\"}");
-            return;
+            String opponent = Database.getFirstOpponent(username);
+            if (opponent == null) {
+                System.out.println("[DEBUG] No opponent found for user: " + username);
+                sendResponse(out, 200, "{\"message\":\"Waiting for an opponent...\"}");
+                return;
+            }
+
+            System.out.println("[DEBUG] Opponent found: " + opponent + " for user: " + username);
+
+            // Entferne Spieler aus der Queue, wenn ein Gegner gefunden wurde
+            Database.removeFromQueue(username);
+            Database.removeFromQueue(opponent);
+
+            // Prüfen, ob das Battle schon gestartet wurde
+            boolean battleAlreadyStarted = Database.isBattleActive(username, opponent);
+            if (battleAlreadyStarted) {
+                System.out.println("[DEBUG] Battle between " + username + " and " + opponent + " already in progress.");
+                sendResponse(out, 200, "{\"message\":\"Battle already in progress\"}");
+                return;
+            }
+
+            // Markiere das Battle als aktiv
+            Database.markBattleAsActive(username, opponent);
+
+            // Starte den Kampf
+            System.out.println("[DEBUG] Starting battle between " + username + " and " + opponent);
+            BattleResult result = BattleHandling.startBattle(username, opponent);
+            System.out.println("[DEBUG] Battle completed between " + username + " and " + opponent);
+
+            // Entferne Battle-Markierung nach Abschluss
+            Database.removeBattleMarker(username, opponent);
+
+            // Antwort senden
+            sendResponse(out, 200, new Gson().toJson(result));
         }
-
-        // Entferne Spieler aus der Queue, wenn ein Gegner gefunden wurde
-        Database.removeFromQueue(username);
-        Database.removeFromQueue(opponent);
-
-        // Starte den Kampf
-        BattleResult result = BattleHandling.startBattle(username, opponent);
-        sendResponse(out, 200, new Gson().toJson(result));
     }
+
+
+
 
     private static void handleCreateTradingDeal(String body, String authorizationHeader, OutputStream out) throws Exception {
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
@@ -168,16 +184,5 @@ public class POSTRequestHandling {
             e.printStackTrace();
             sendResponse(out, 500, "{\"message\":\"Internal Server Error\"}");
         }
-    }
-
-
-    private static void sendResponse(OutputStream out, int statusCode, String body) throws Exception {
-        String statusLine = "HTTP/1.1 " + statusCode + "\r\n";
-        String httpResponse = statusLine +
-                "Content-Type: application/json\r\n" +
-                "Content-Length: " + body.getBytes("UTF-8").length + "\r\n" +
-                "\r\n" +
-                body;
-        out.write(httpResponse.getBytes("UTF-8"));
     }
 }

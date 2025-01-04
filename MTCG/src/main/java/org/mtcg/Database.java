@@ -363,16 +363,6 @@ public class Database {
         }
     }
 
-//    public static void incrementGames(String username) {
-//        String query = "UPDATE users SET games_played = games_played + 1 WHERE username = ?";
-//        try (Connection conn = getConnection();
-//             PreparedStatement stmt = conn.prepareStatement(query)) {
-//            stmt.setString(1, username);
-//            stmt.executeUpdate();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
     public static String getFirstOpponent(String currentUser) {
         String query = """
         SELECT username 
@@ -624,7 +614,7 @@ public class Database {
         }
     }
 
-    private static int getUserId(String username) throws Exception {
+    static int getUserId(String username) throws Exception {
         String query = "SELECT id FROM users WHERE username = ?";
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -637,6 +627,151 @@ public class Database {
             }
         }
     }
+
+    public static int insertPackage() throws Exception {
+        String insertPackageQuery = "INSERT INTO packages DEFAULT VALUES RETURNING id";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(insertPackageQuery);
+             ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt("id");
+            } else {
+                throw new Exception("Fehler beim Einfügen des Pakets.");
+            }
+        }
+    }
+
+    public static void insertCardAndLinkToPackage(String id, String name, double damage, int packageId) throws Exception {
+        String insertCardQuery = """
+    INSERT INTO cards (id, name, damage, element_type, card_type)
+    VALUES (CAST(? AS UUID), ?, ?, ?, ?)
+    ON CONFLICT DO NOTHING
+    """;
+        String linkCardToPackageQuery = """
+    INSERT INTO package_cards (package_id, card_id)
+    VALUES (?, CAST(? AS UUID))
+    """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement insertCardStmt = conn.prepareStatement(insertCardQuery);
+             PreparedStatement linkCardStmt = conn.prepareStatement(linkCardToPackageQuery)) {
+
+            String elementType = PackageHandling.getElementTypeFromName(name);
+            String cardType = PackageHandling.getCardTypeFromName(name);
+
+            insertCardStmt.setString(1, id);
+            insertCardStmt.setString(2, name);
+            insertCardStmt.setDouble(3, damage);
+            insertCardStmt.setString(4, elementType);
+            insertCardStmt.setString(5, cardType);
+            insertCardStmt.executeUpdate();
+
+            linkCardStmt.setInt(1, packageId);
+            linkCardStmt.setString(2, id);
+            linkCardStmt.executeUpdate();
+        }
+    }
+
+    public static boolean arePackagesAvailable() throws Exception {
+        String query = "SELECT COUNT(*) AS remaining FROM packages";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+            return rs.next() && rs.getInt("remaining") > 0;
+        }
+    }
+
+    public static boolean hasEnoughCoins(String username, int cost) throws Exception {
+        String query = "SELECT coins FROM users WHERE username = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, username);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next() && rs.getInt("coins") >= cost;
+        }
+    }
+
+    public static int getOldestPackage() throws Exception {
+        String query = "SELECT id FROM packages ORDER BY id ASC LIMIT 1";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt("id");
+            }
+            return -1;
+        }
+    }
+
+    public static void reduceUserCoins(String username, int cost) throws Exception {
+        String query = "UPDATE users SET coins = coins - ? WHERE username = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, cost);
+            stmt.setString(2, username);
+            stmt.executeUpdate();
+        }
+    }
+
+    public static void assignCardsToUser(String username, int packageId) throws Exception {
+        String assignQuery = """
+    INSERT INTO user_cards (user_id, card_id)
+    SELECT (SELECT id FROM users WHERE username = ?), card_id
+    FROM package_cards WHERE package_id = ?
+    """;
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(assignQuery)) {
+            stmt.setString(1, username);
+            stmt.setInt(2, packageId);
+            stmt.executeUpdate();
+        }
+    }
+
+    public static void deletePackage(int packageId) throws Exception {
+        String query = "DELETE FROM packages WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, packageId);
+            stmt.executeUpdate();
+        }
+    }
+
+    public static boolean isBattleActive(String player1, String player2) throws SQLException {
+        String query = "SELECT 1 FROM active_battles WHERE (player1 = ? AND player2 = ?) OR (player1 = ? AND player2 = ?)";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, player1);
+            stmt.setString(2, player2);
+            stmt.setString(3, player2);
+            stmt.setString(4, player1);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        }
+    }
+
+    public static void markBattleAsActive(String player1, String player2) throws SQLException {
+        String query = "INSERT INTO active_battles (player1, player2) VALUES (?, ?)";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, player1);
+            stmt.setString(2, player2);
+            stmt.executeUpdate();
+        }
+    }
+
+    public static void removeBattleMarker(String player1, String player2) throws SQLException {
+        String query = "DELETE FROM active_battles WHERE (player1 = ? AND player2 = ?) OR (player1 = ? AND player2 = ?)";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, player1);
+            stmt.setString(2, player2);
+            stmt.setString(3, player2);
+            stmt.setString(4, player1);
+            stmt.executeUpdate();
+        }
+    }
+
+
 
 
 

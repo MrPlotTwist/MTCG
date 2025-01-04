@@ -1,17 +1,16 @@
 package org.mtcg;
 
 import java.io.OutputStream;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.ArrayList;
+
+import static org.mtcg.ClientHandling.sendResponse;
 
 public class PackageHandling {
 
     public static void handlePackageRequest(String body, OutputStream out) {
-        try (Connection conn = Database.getConnection()) {
+        try {
             // Neues Paket in der Datenbank erstellen
-            int packageId = insertPackage(conn);
+            int packageId = Database.insertPackage();
 
             // Liste zur Speicherung der Karteninformationen
             ArrayList<String> cardList = new ArrayList<>();
@@ -33,7 +32,7 @@ public class PackageHandling {
                 double damage = Double.parseDouble(damageValue);
 
                 // Karte erstellen und in der Datenbank speichern
-                insertCardAndLinkToPackage(conn, id, name, damage, packageId);
+                Database.insertCardAndLinkToPackage(id, name, damage, packageId);
 
                 // Karteninformationen zur Liste hinzufügen
                 cardList.add(String.format("{\"Id\":\"%s\",\"Name\":\"%s\",\"Damage\":%.1f}", id, name, damage));
@@ -59,52 +58,6 @@ public class PackageHandling {
         }
     }
 
-
-    private static int insertPackage(Connection conn) throws Exception {
-        String insertPackageQuery = "INSERT INTO packages DEFAULT VALUES RETURNING id";
-        try (PreparedStatement stmt = conn.prepareStatement(insertPackageQuery)) {
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return rs.getInt("id");
-            } else {
-                throw new Exception("Fehler beim Einfügen des Pakets.");
-            }
-        }
-    }
-
-    private static void insertCardAndLinkToPackage(Connection conn, String id, String name, double damage, int packageId) throws Exception {
-        String insertCardQuery = """
-        INSERT INTO cards (id, name, damage, element_type, card_type)
-        VALUES (CAST(? AS UUID), ?, ?, ?, ?)
-        ON CONFLICT DO NOTHING
-    """;
-        String linkCardToPackageQuery = """
-        INSERT INTO package_cards (package_id, card_id)
-        VALUES (?, CAST(? AS UUID))
-    """;
-
-        try (PreparedStatement insertCardStmt = conn.prepareStatement(insertCardQuery);
-             PreparedStatement linkCardStmt = conn.prepareStatement(linkCardToPackageQuery)) {
-
-            // Dynamisch den Elementtyp und Kartentyp basierend auf dem Namen bestimmen
-            String elementType = getElementTypeFromName(name);
-            String cardType = getCardTypeFromName(name);
-
-            // Karte in die Datenbank einfügen
-            insertCardStmt.setString(1, id);
-            insertCardStmt.setString(2, name);
-            insertCardStmt.setDouble(3, damage);
-            insertCardStmt.setString(4, elementType);
-            insertCardStmt.setString(5, cardType);
-            insertCardStmt.executeUpdate();
-
-            // Karte mit dem Paket verknüpfen
-            linkCardStmt.setInt(1, packageId);
-            linkCardStmt.setString(2, id);
-            linkCardStmt.executeUpdate();
-        }
-    }
-
     static String getElementTypeFromName(String name) {
         if (name.toLowerCase().contains("water")) {
             return "water";
@@ -124,10 +77,5 @@ public class PackageHandling {
             return "spell";
         }
         return "unknown"; // Standardwert für unbekannte Kartentypen
-    }
-
-
-    private static void sendResponse(OutputStream out, int statusCode, String body) throws Exception {
-        ClientHandling.sendResponse(out, statusCode, body);
     }
 }
