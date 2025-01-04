@@ -49,6 +49,9 @@ public class ClientHandling {
                     case "PUT":
                         PUTRequestHandling.handlePutRequest(url, body.toString(), authorizationHeader, out);
                         break;
+                    case "DELETE":
+                        DELETERequestHandling.handleDeleteRequest(url, authorizationHeader, out);
+                        break;
                     default:
                         sendResponse(out, 405, "{\"message\":\"Method Not Allowed\"}");
                         break;

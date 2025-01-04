@@ -421,6 +421,7 @@ if %pauseFlag%==1 pause
 REM --------------------------------------------------
 echo end...
 
-REM this is approx a sleep 
-ping localhost -n 100 >NUL 2>NUL
+REM Wait for user input
+pause
 @echo on
+

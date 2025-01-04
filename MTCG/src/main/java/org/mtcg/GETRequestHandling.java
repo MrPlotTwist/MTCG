@@ -2,6 +2,7 @@ package org.mtcg;
 
 import com.google.gson.Gson;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 
@@ -37,8 +38,10 @@ public class GETRequestHandling {
                 handleUserRequest(requestedUsername, username, out);
             } else if (url.equals("/stats")) {
                 handleStatsRequest(username, out);
-            } if (url.equals("/scoreboard")) {
+            } else if (url.equals("/scoreboard")) {
                 handleScoreboardRequest(out);
+            } else if (url.equals("/tradings")) {
+                handleGetTradingDeals(out);
             } else {
                 sendResponse(out, 404, "{\"message\":\"Not Found\"}");
             }
@@ -152,5 +155,12 @@ public class GETRequestHandling {
             sendResponse(out, 404, "{\"message\":\"Scoreboard is empty\"}");
         }
     }
+    private static void handleGetTradingDeals(OutputStream out) throws IOException {
+        List<Trading> deals = Database.getTradingDeals();
+        Gson gson = new Gson();
+        String response = gson.toJson(deals);
+        sendResponse(out, 200, response);
+    }
+
 
 }

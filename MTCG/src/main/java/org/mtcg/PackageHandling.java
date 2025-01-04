@@ -13,6 +13,9 @@ public class PackageHandling {
             // Neues Paket in der Datenbank erstellen
             int packageId = insertPackage(conn);
 
+            // Liste zur Speicherung der Karteninformationen
+            ArrayList<String> cardList = new ArrayList<>();
+
             // Entferne die eckigen Klammern und teile den String nach "}," auf
             String[] cardDataArray = body.replace("[", "").replace("]", "").split("},");
             for (String cardData : cardDataArray) {
@@ -31,8 +34,19 @@ public class PackageHandling {
 
                 // Karte erstellen und in der Datenbank speichern
                 insertCardAndLinkToPackage(conn, id, name, damage, packageId);
+
+                // Karteninformationen zur Liste hinzufügen
+                cardList.add(String.format("{\"Id\":\"%s\",\"Name\":\"%s\",\"Damage\":%.1f}", id, name, damage));
             }
 
+            // JSON für das erstellte Paket und die Karten erstellen
+            String jsonResponse = String.format("{\"PackageId\":%d,\"Cards\":[%s]}",
+                    packageId,
+                    String.join(",", cardList)
+            );
+
+            // Erfolgsausgabe
+            sendResponse(out, 201, jsonResponse);
             System.out.println("Paket erfolgreich erstellt. Paket-ID: " + packageId);
 
         } catch (Exception e) {
@@ -44,6 +58,7 @@ public class PackageHandling {
             }
         }
     }
+
 
     private static int insertPackage(Connection conn) throws Exception {
         String insertPackageQuery = "INSERT INTO packages DEFAULT VALUES RETURNING id";
@@ -90,7 +105,7 @@ public class PackageHandling {
         }
     }
 
-    private static String getElementTypeFromName(String name) {
+    static String getElementTypeFromName(String name) {
         if (name.toLowerCase().contains("water")) {
             return "water";
         } else if (name.toLowerCase().contains("fire")) {
@@ -100,7 +115,7 @@ public class PackageHandling {
         }
     }
 
-    private static String getCardTypeFromName(String name) {
+    static String getCardTypeFromName(String name) {
         if (name.toLowerCase().contains("goblin") || name.toLowerCase().contains("dragon") ||
                 name.toLowerCase().contains("ork") || name.toLowerCase().contains("knight") ||
                 name.toLowerCase().contains("kraken") || name.toLowerCase().contains("elf")) {

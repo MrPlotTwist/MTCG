@@ -9,7 +9,10 @@ public class ResetDatabase {
         try (Connection conn = Database.getConnection()) {
 
             // 1. Lösche alle Einträge aus den Tabellen
+            deleteAllFromTable(conn, "battle_queue");
             deleteAllFromTable(conn, "battles");
+            deleteAllFromTable(conn, "trading_deals");
+            deleteAllFromTable(conn, "user_deck");
             deleteAllFromTable(conn, "user_cards");
             deleteAllFromTable(conn, "package_cards");
             deleteAllFromTable(conn, "packages");
@@ -17,9 +20,11 @@ public class ResetDatabase {
             deleteAllFromTable(conn, "users");
 
             // 2. Setze alle Sequenzen zurück
+            resetSequence(conn, "battle_queue_id_seq");
             resetSequence(conn, "battles_id_seq");
             resetSequence(conn, "packages_id_seq");
             resetSequence(conn, "users_id_seq");
+            resetSequence(conn, "user_deck_id_seq");
 
             // 3. Setze Coins für alle Benutzer zurück
             resetUserCoins(conn);

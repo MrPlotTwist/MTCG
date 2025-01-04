@@ -29,6 +29,8 @@ public class TransactionHandling {
             // Prüfe dynamisch, ob Pakete verfügbar sind
             if (arePackagesAvailable(conn)) {
                 reduceUserCoins(conn, username, out);
+                // Erfolgsausgabe
+                sendResponse(out, 201, "{\"message\":\"Package aquired\"}");
             }
 
             // Karten des Packages dem Benutzer zuweisen

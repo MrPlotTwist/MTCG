@@ -14,12 +14,71 @@ public class Database {
 
     // Verbindungsdetails als Konstanten
     private static final String URL = "jdbc:postgresql://localhost:5432/mtcg";
+    private static final String TEST_URL = "jdbc:postgresql://localhost:5432/mtcg_test";
     private static final String USER = "postgres";
     private static final String PASSWORD = "tomi2002";
+    private static String currentDbUrl = URL;
 
-    // Methode, um eine Verbindung zur Datenbank herzustellen
+    public static void useTestDatabase() {
+        currentDbUrl = TEST_URL;
+    }
+
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASSWORD);
+        return DriverManager.getConnection(currentDbUrl, USER, PASSWORD);
+    }
+
+    public static boolean login(String username, String password) {
+        String query = "SELECT COUNT(*) FROM users WHERE username = ? AND password = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, username);
+            stmt.setString(2, password);
+
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next() && rs.getInt(1) > 0) {
+                System.out.println("Login successful for user: " + username);
+                return true; // Benutzer existiert mit korrekten Anmeldedaten
+            }
+        } catch (Exception e) {
+            System.err.println("Error during login process: " + e.getMessage());
+            e.printStackTrace();
+        }
+        System.out.println("Login failed for user: " + username);
+        return false; // Benutzer existiert nicht oder Passwort ist falsch
+    }
+
+    public static boolean registerUser(String username, String password) {
+        if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
+            System.out.println("Username or password is empty.");
+            return false;
+        }
+
+        try (Connection conn = Database.getConnection()) {
+            // Check if user already exists
+            String checkUserQuery = "SELECT COUNT(*) FROM users WHERE username = ?";
+            try (PreparedStatement checkStmt = conn.prepareStatement(checkUserQuery)) {
+                checkStmt.setString(1, username);
+                ResultSet rs = checkStmt.executeQuery();
+                if (rs.next() && rs.getInt(1) > 0) {
+                    System.out.println("User already exists: " + username);
+                    return false; // User already exists
+                }
+            }
+
+            // Insert new user
+            String insertUserQuery = "INSERT INTO users (username, password, coins) VALUES (?, ?, 20)";
+            try (PreparedStatement insertStmt = conn.prepareStatement(insertUserQuery)) {
+                insertStmt.setString(1, username);
+                insertStmt.setString(2, password);
+                insertStmt.executeUpdate();
+                System.out.println("User registered successfully: " + username);
+                return true; // User successfully registered
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false; // Internal error
+        }
     }
 
     // Funktion zum Abrufen der Karten eines Benutzers
@@ -415,5 +474,170 @@ public class Database {
         }
         return deals;
     }
+
+    public static boolean deleteTradingDeal(String dealId, String username) {
+        String query = """
+        DELETE FROM trading_deals
+        WHERE id = CAST(? AS UUID)
+          AND creator_id = (SELECT id FROM users WHERE username = ?)
+    """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, dealId);
+            stmt.setString(2, username);
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static boolean processTrade(String dealId, String username, String offeredCardId) {
+        String getDealQuery = """
+    SELECT card_id, type, minimum_damage, creator_id 
+    FROM trading_deals 
+    WHERE id = CAST(? AS UUID)
+    """;
+
+        String validateCardQuery = """
+    SELECT id 
+    FROM cards 
+    WHERE id = CAST(? AS UUID) AND card_type = ? AND damage >= ?
+    AND id IN (SELECT card_id FROM user_cards WHERE user_id = (SELECT id FROM users WHERE username = ?))
+    """;
+
+        String updateOwnershipQuery = """
+    UPDATE user_cards 
+    SET user_id = ? 
+    WHERE card_id = CAST(? AS UUID)
+    """;
+
+        String deleteDealQuery = "DELETE FROM trading_deals WHERE id = CAST(? AS UUID)";
+
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+
+            System.out.println("Starting trade process...");
+            System.out.println("Deal ID: " + dealId + ", Username: " + username + ", Offered Card ID: " + offeredCardId);
+
+            // 1. Handelsangebot abrufen
+            try (PreparedStatement getDealStmt = conn.prepareStatement(getDealQuery)) {
+                getDealStmt.setString(1, dealId);
+                ResultSet dealRs = getDealStmt.executeQuery();
+
+                if (!dealRs.next()) {
+                    System.out.println("No trade deal found for ID: " + dealId);
+                    return false; // Kein Handelsangebot gefunden
+                }
+
+                String cardToTrade = dealRs.getString("card_id");
+                String type = dealRs.getString("type");
+                double minDamage = dealRs.getDouble("minimum_damage");
+                int creatorId = dealRs.getInt("creator_id");
+
+                System.out.println("Trade deal details - Card to Trade: " + cardToTrade + ", Type: " + type +
+                        ", Min Damage: " + minDamage + ", Creator ID: " + creatorId);
+
+                // 2. Überprüfen, ob die angebotene Karte gültig ist
+                System.out.println("Validating offered card: " + offeredCardId);
+                try (PreparedStatement validateCardStmt = conn.prepareStatement(validateCardQuery)) {
+                    validateCardStmt.setString(1, offeredCardId);
+                    validateCardStmt.setString(2, type);
+                    validateCardStmt.setDouble(3, minDamage);
+                    validateCardStmt.setString(4, username);
+
+                    ResultSet validateRs = validateCardStmt.executeQuery();
+                    if (!validateRs.next()) {
+                        System.out.println("Offered card validation failed.");
+                        conn.rollback();
+                        return false; // Karte nicht gültig
+                    }
+                }
+
+                // 2. Überprüfen, ob der Benutzer mit sich selbst handelt
+                String checkUserQuery = "SELECT id FROM users WHERE username = ?";
+                try (PreparedStatement checkUserStmt = conn.prepareStatement(checkUserQuery)) {
+                    checkUserStmt.setString(1, username);
+                    ResultSet userRs = checkUserStmt.executeQuery();
+
+                    if (userRs.next()) {
+                        int userId = userRs.getInt("id");
+                        if (userId == creatorId) {
+                            System.out.println("User " + username + " tried to trade with themselves.");
+                            conn.rollback();
+                            return false; // Benutzer handelt mit sich selbst
+                        }
+                    } else {
+                        System.out.println("User " + username + " does not exist.");
+                        conn.rollback();
+                        return false; // Benutzer existiert nicht
+                    }
+                }
+
+                // 3. Besitz der Karten tauschen
+                System.out.println("Updating ownership for cards...");
+                try (PreparedStatement updateStmt = conn.prepareStatement(updateOwnershipQuery)) {
+                    // Besitzer der Karte im Deal ändern
+                    updateStmt.setInt(1, getUserId(username));
+                    updateStmt.setString(2, cardToTrade);
+                    int updatedRows = updateStmt.executeUpdate();
+                    System.out.println("Updated ownership for card_to_trade. Rows affected: " + updatedRows);
+                    if (updatedRows == 0) {
+                        System.out.println("Failed to update ownership for card_to_trade.");
+                        conn.rollback();
+                        return false;
+                    }
+
+                    // Besitzer der angebotenen Karte ändern
+                    updateStmt.setInt(1, creatorId);
+                    updateStmt.setString(2, offeredCardId);
+                    updatedRows = updateStmt.executeUpdate();
+                    System.out.println("Updated ownership for offered card. Rows affected: " + updatedRows);
+                    if (updatedRows == 0) {
+                        System.out.println("Failed to update ownership for offered card.");
+                        conn.rollback();
+                        return false;
+                    }
+                }
+
+                // 4. Handelsangebot löschen
+                System.out.println("Deleting trade deal: " + dealId);
+                try (PreparedStatement deleteStmt = conn.prepareStatement(deleteDealQuery)) {
+                    deleteStmt.setString(1, dealId);
+                    int deletedRows = deleteStmt.executeUpdate();
+                    System.out.println("Deleted trade deal. Rows affected: " + deletedRows);
+                }
+
+                conn.commit();
+                System.out.println("Trade process completed successfully.");
+                return true;
+            } catch (Exception e) {
+                conn.rollback();
+                e.printStackTrace();
+                return false;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private static int getUserId(String username) throws Exception {
+        String query = "SELECT id FROM users WHERE username = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, username);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("id");
+            } else {
+                throw new Exception("User not found: " + username);
+            }
+        }
+    }
+
+
 
 }

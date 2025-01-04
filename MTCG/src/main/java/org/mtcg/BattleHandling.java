@@ -150,6 +150,7 @@ public class BattleHandling {
         if (attackerElement.equals("Water") && defenderElement.equals("Fire")) return 2.0;
         if (attackerElement.equals("Fire") && defenderElement.equals("Normal")) return 2.0;
         if (attackerElement.equals("Normal") && defenderElement.equals("Water")) return 2.0;
+        if (defenderElement.equals("Normal") && attackerElement.equals("Normal")) return 2;
         if (defenderElement.equals("Water") && attackerElement.equals("Fire")) return 0.5;
         if (defenderElement.equals("Fire") && attackerElement.equals("Normal")) return 0.5;
         if (defenderElement.equals("Normal") && attackerElement.equals("Water")) return 0.5;
@@ -161,7 +162,5 @@ public class BattleHandling {
             Database.updateELO(winner, 3);
             Database.updateELO(loser, -5);
         }
-//        Database.incrementGames(winner);
-//        Database.incrementGames(loser);
     }
 }
