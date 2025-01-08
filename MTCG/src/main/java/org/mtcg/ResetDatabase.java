@@ -18,6 +18,7 @@ public class ResetDatabase {
             deleteAllFromTable(conn, "packages");
             deleteAllFromTable(conn, "cards");
             deleteAllFromTable(conn, "users");
+            deleteAllFromTable(conn, "active_battles");
 
             // 2. Setze alle Sequenzen zurück
             resetSequence(conn, "battle_queue_id_seq");

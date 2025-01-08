@@ -88,13 +88,13 @@ public class POSTRequestHandling {
             Database.removeFromQueue(username);
             Database.removeFromQueue(opponent);
 
-            // Prüfen, ob das Battle schon gestartet wurde
-            boolean battleAlreadyStarted = Database.isBattleActive(username, opponent);
-            if (battleAlreadyStarted) {
-                System.out.println("[DEBUG] Battle between " + username + " and " + opponent + " already in progress.");
-                sendResponse(out, 200, "{\"message\":\"Battle already in progress\"}");
-                return;
-            }
+//            // Prüfen, ob das Battle schon gestartet wurde
+//            boolean battleAlreadyStarted = Database.isBattleActive(username, opponent);
+//            if (battleAlreadyStarted) {
+//                System.out.println("[DEBUG] Battle between " + username + " and " + opponent + " already in progress.");
+//                sendResponse(out, 200, "{\"message\":\"Battle already in progress\"}");
+//                return;
+//            }
 
             // Markiere das Battle als aktiv
             Database.markBattleAsActive(username, opponent);

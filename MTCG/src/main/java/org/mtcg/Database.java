@@ -165,73 +165,67 @@ public class Database {
             return false;
         }
 
-        String checkCardOwnershipQuery = """
-        SELECT COUNT(*) 
-        FROM user_cards uc
-        JOIN users u ON uc.user_id = u.id
-        WHERE u.username = ? AND uc.card_id = ?::uuid
-    """;
+        try {
+            // Hole den Stack des Benutzers
+            Stack stack = Database.getStackForPlayer(username);
 
+            // Überprüfen, ob alle Karten im Stack des Benutzers enthalten sind
+            for (String cardId : cardIds) {
+                if (!stack.containsCard(cardId)) {
+                    System.out.println("Karte " + cardId + " ist nicht im Stack von Benutzer: " + username);
+                    return false;
+                }
+            }
 
-        String clearDeckQuery = """
+            String clearDeckQuery = """
         DELETE FROM user_deck
         WHERE user_id = (SELECT id FROM users WHERE username = ?)
-    """;
+        """;
 
-        String insertDeckQuery = """
-    INSERT INTO user_deck (user_id, card_id)
-    SELECT u.id, ?::uuid
-    FROM users u
-    WHERE u.username = ?
-    """;
+            String insertDeckQuery = """
+        INSERT INTO user_deck (user_id, card_id)
+        SELECT u.id, ?::uuid
+        FROM users u
+        WHERE u.username = ?
+        """;
 
-        try (Connection conn = getConnection()) {
-            conn.setAutoCommit(false);
+            try (Connection conn = getConnection()) {
+                conn.setAutoCommit(false);
 
-            System.out.println("Starte Transaktion für Benutzer: " + username);
+                System.out.println("Starte Transaktion für Benutzer: " + username);
 
-            // Prüfen, ob alle Karten dem Benutzer gehören
-            for (String cardId : cardIds) {
-                try (PreparedStatement stmt = conn.prepareStatement(checkCardOwnershipQuery)) {
+                // Altes Deck löschen
+                try (PreparedStatement stmt = conn.prepareStatement(clearDeckQuery)) {
                     stmt.setString(1, username);
-                    stmt.setString(2, cardId);
+                    int rowsDeleted = stmt.executeUpdate();
+                    System.out.println("Gelöschte Deck-Einträge für Benutzer " + username + ": " + rowsDeleted);
+                }
 
-                    ResultSet rs = stmt.executeQuery();
-                    if (rs.next() && rs.getInt(1) == 0) {
-                        System.out.println("Karte " + cardId + " gehört nicht Benutzer: " + username);
-                        conn.rollback();
-                        return false;
+                // Neues Deck einfügen
+                try (PreparedStatement stmt = conn.prepareStatement(insertDeckQuery)) {
+                    for (String cardId : cardIds) {
+                        stmt.setString(1, cardId);
+                        stmt.setString(2, username);
+                        stmt.addBatch();
+                        System.out.println("Füge Karte zum Deck hinzu: " + cardId);
                     }
+                    int[] rowsInserted = stmt.executeBatch();
+                    System.out.println("Erfolgreich eingefügte Deck-Einträge: " + rowsInserted.length);
                 }
-            }
 
-            // Altes Deck löschen
-            try (PreparedStatement stmt = conn.prepareStatement(clearDeckQuery)) {
-                stmt.setString(1, username);
-                int rowsDeleted = stmt.executeUpdate();
-                System.out.println("Gelöschte Deck-Einträge für Benutzer " + username + ": " + rowsDeleted);
+                conn.commit();
+                System.out.println("Transaktion erfolgreich abgeschlossen für Benutzer: " + username);
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
             }
-
-            // Neues Deck einfügen
-            try (PreparedStatement stmt = conn.prepareStatement(insertDeckQuery)) {
-                for (String cardId : cardIds) {
-                    stmt.setString(1, cardId);
-                    stmt.setString(2, username);
-                    stmt.addBatch();
-                    System.out.println("Füge Karte zum Deck hinzu: " + cardId);
-                }
-                int[] rowsInserted = stmt.executeBatch();
-                System.out.println("Erfolgreich eingefügte Deck-Einträge: " + rowsInserted.length);
-            }
-
-            conn.commit();
-            System.out.println("Transaktion erfolgreich abgeschlossen für Benutzer: " + username);
-            return true;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
     }
+
 
     public static User getUserData(String username) {
         String query = "SELECT username, name, bio, image FROM users WHERE username = ?";
@@ -769,6 +763,66 @@ public class Database {
             stmt.setString(4, player1);
             stmt.executeUpdate();
         }
+    }
+
+    public static Deck getDeckForPlayer(String username) {
+        Deck deck = new Deck();
+        String query = """
+        SELECT c.id, c.name, c.card_type, c.element_type, c.damage
+        FROM user_deck ud
+        JOIN cards c ON ud.card_id = c.id
+        JOIN users u ON ud.user_id = u.id
+        WHERE u.username = ?
+    """;
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, username);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                Card card = new Card(
+                        rs.getString("id"),
+                        rs.getString("name"),
+                        rs.getString("card_type"),
+                        rs.getString("element_type"),
+                        rs.getDouble("damage")
+                );
+                deck.addCard(card);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return deck;
+    }
+
+    public static Stack getStackForPlayer(String username) {
+        Stack stack = new Stack();
+        String query = """
+        SELECT c.id, c.name, c.card_type, c.element_type, c.damage
+        FROM user_cards uc
+        JOIN cards c ON uc.card_id = c.id
+        JOIN users u ON uc.user_id = u.id
+        WHERE u.username = ?
+    """;
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, username);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                Card card = new Card(
+                        rs.getString("id"),
+                        rs.getString("name"),
+                        rs.getString("card_type"),
+                        rs.getString("element_type"),
+                        rs.getDouble("damage")
+                );
+                stack.addCard(card);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return stack;
     }
 
 

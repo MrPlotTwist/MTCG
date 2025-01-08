@@ -7,29 +7,38 @@ public class BattleHandling {
     private static final int MAX_ROUNDS = 100;
 
     public static BattleResult startBattle(String player1, String player2) {
-        List<Card> deck1 = Database.getDeckForBattle(player1);
-        List<Card> deck2 = Database.getDeckForBattle(player2);
+        // Debugging: Battle-Start
+        System.out.println("[DEBUG] Starting battle between " + player1 + " and " + player2);
 
-        if (deck1.isEmpty() || deck2.isEmpty()) {
+        // Booster-Flags für die Spieler
+        boolean player1UsedBooster = false;
+        boolean player2UsedBooster = false;
+
+        // Decks der Spieler aus der Datenbank abrufen
+        Deck deck1 = Database.getDeckForPlayer(player1);
+        Deck deck2 = Database.getDeckForPlayer(player2);
+
+        // Überprüfen, ob Decks konfiguriert sind
+        if (deck1.getCards().isEmpty() || deck2.getCards().isEmpty()) {
+            System.out.println("[DEBUG] One or both players have no configured deck.");
             return new BattleResult(false, "One or both players do not have a configured deck.");
         }
 
         int rounds = 0;
         int player1Wins = 0;
         int player2Wins = 0;
-        boolean player1UsedBooster = false;
-        boolean player2UsedBooster = false;
         List<String> log = new ArrayList<>();
 
         log.add("Starting battle between " + player1 + " and " + player2);
 
-        while (!deck1.isEmpty() && !deck2.isEmpty() && rounds < MAX_ROUNDS) {
+        // Battle-Logik
+        while (!deck1.getCards().isEmpty() && !deck2.getCards().isEmpty() && rounds < MAX_ROUNDS) {
             rounds++;
             log.add("Round " + rounds);
 
             // Karten zufällig auswählen
-            Card card1 = deck1.get((int) (Math.random() * deck1.size()));
-            Card card2 = deck2.get((int) (Math.random() * deck2.size()));
+            Card card1 = deck1.getCards().get((int) (Math.random() * deck1.getCards().size()));
+            Card card2 = deck2.getCards().get((int) (Math.random() * deck2.getCards().size()));
 
             log.add(player1 + " plays: " + card1);
             log.add(player2 + " plays: " + card2);
@@ -41,29 +50,11 @@ public class BattleHandling {
             // Ergebnisse der Spezialfälle behandeln
             if (specialCaseResult1 != null) {
                 log.add(specialCaseResult1);
-                if (specialCaseResult1.contains(player1)) {
-                    player1Wins++;
-                    deck2.remove(card2);
-                    deck1.add(card2);
-                } else if (specialCaseResult1.contains(player2)) {
-                    player2Wins++;
-                    deck1.remove(card1);
-                    deck2.add(card1);
-                }
                 continue; // Nächste Runde starten
             }
 
             if (specialCaseResult2 != null) {
                 log.add(specialCaseResult2);
-                if (specialCaseResult2.contains(player1)) {
-                    player1Wins++;
-                    deck2.remove(card2);
-                    deck1.add(card2);
-                } else if (specialCaseResult2.contains(player2)) {
-                    player2Wins++;
-                    deck1.remove(card1);
-                    deck2.add(card1);
-                }
                 continue; // Nächste Runde starten
             }
 
@@ -71,13 +62,13 @@ public class BattleHandling {
             boolean player1Booster = false;
             boolean player2Booster = false;
 
-            if (!player1UsedBooster && Math.random() > 0.7) { // 30% Chance, den Booster einzusetzen
+            if (!player1UsedBooster && Math.random() > 0.7) {
                 player1Booster = true;
                 player1UsedBooster = true;
                 log.add(player1 + " uses a damage booster on " + card1.getName() + "!");
             }
 
-            if (!player2UsedBooster && Math.random() > 0.7) { // 30% Chance, den Booster einzusetzen
+            if (!player2UsedBooster && Math.random() > 0.7) {
                 player2Booster = true;
                 player2UsedBooster = true;
                 log.add(player2 + " uses a damage booster on " + card2.getName() + "!");
@@ -90,22 +81,25 @@ public class BattleHandling {
             log.add(card1.getName() + " deals " + damage1 + " damage");
             log.add(card2.getName() + " deals " + damage2 + " damage");
 
+            // Gewinner der Runde bestimmen
             if (damage1 > damage2) {
                 log.add(player1 + " wins this round.");
                 player1Wins++;
-                deck2.remove(card2);
-                deck1.add(card2);
+                deck2.removeCard(card2);
+                deck1.removeCard(card1);
+                deck1.addCard(card2); // Gegnerische Karte übernehmen
             } else if (damage2 > damage1) {
                 log.add(player2 + " wins this round.");
                 player2Wins++;
-                deck1.remove(card1);
-                deck2.add(card1);
+                deck1.removeCard(card1);
+                deck2.removeCard(card2);
+                deck2.addCard(card1); // Gegnerische Karte übernehmen
             } else {
                 log.add("Round ends in a draw.");
             }
         }
 
-        // Endergebnis
+        // Endergebnis auswerten
         log.add("The battle ends after " + rounds + " rounds.");
         log.add(player1 + " won " + player1Wins + " rounds.");
         log.add(player2 + " won " + player2Wins + " rounds.");
@@ -133,6 +127,7 @@ public class BattleHandling {
 
         return new BattleResult(true, log.get(log.size() - 1), log);
     }
+
 
     private static double calculateDamage(Card attacker, Card defender, boolean applyBooster) {
         double baseDamage = attacker.getDamage();

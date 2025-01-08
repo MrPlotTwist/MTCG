@@ -1,76 +1,90 @@
 @startuml
 
-package org.mtcg {
-
-class User {
-        - String username
-        - String password
-        - int coins
-        - List<Card> stack
-        - List<Card> deck
-        + static List<User> users
-
-        + User(String username, String password)
-        + int getCoins()
-        + void setCoins(int coins)
-        + static List<User> getUsers()
-        + static void setUsers(List<User> users)
-        + String getUsername()
-        + String getPassword()
-        + String toString()
-        + List<Card> getStack()
-        + void setStack(List<Card> stack)
-        + List<Card> getDeck()
-        + void setDeck(List<Card> deck)
-    }
-
-  class Package {
-      - List<Card> cards
-
-      + Package()
-      + Package(List<Card> cards)
-      + List<Card> getCards()
-    }
-
-    Package --> "1..*" Card : contains
-
-    class Server {
-      - static int port
-
-      + Server(int port)
-      + static void start()
-      + static void handleClient(Socket clientSocket)
-
-      - void handlePOSTRequest(String requestLine, BufferedReader in, OutputStream out)
-    }
-
-    Server --> "1..*" User : manages
-
-    class Main {
-        + static void main(String[] args)
-    }
-
-Main --> Server : starts
-
-class Card {
-        + static final String SPELL_CARD
-        + static final String MONSTER_CARD
-        - String name
-        - int damage
-        - String elementType
-        - String cardType
-
-        + Card(String name, int damage, String elementType, String cardType)
-        + String getCardType()
-        + void setCardType(String cardType)
-        + String getName()
-        + void setName(String name)
-        + int getDamage()
-        + void setDamage(int damage)
-        + String getElementType()
-        + void setElementType(String elementType)
-    }
-
+entity active_battles {
+    * player1 : VARCHAR(50)
+    * player2 : VARCHAR(50)
 }
+
+entity battle_queue {
+    * id : INTEGER (PK)
+    * username : VARCHAR(255)
+    * joined_at : DATETIME
+}
+
+entity battles {
+    * id : INTEGER (PK)
+    -- Relationships --
+    user1_id : INT (FK)
+    user2_id : INT (FK)
+    --
+    result : VARCHAR(50)
+}
+
+entity cards {
+    * id : CHAR(36) (PK)
+    * name : VARCHAR(50)
+    * damage : DECIMAL(10,2)
+    * element_type : VARCHAR(50)
+    * card_type : VARCHAR(20)
+}
+
+entity package_cards {
+    * package_id : INT (PK, FK)
+    * card_id : CHAR(36) (PK, FK)
+}
+
+entity packages {
+    * id : INT (PK)
+}
+
+entity trading_deals {
+    * id : CHAR(36) (PK)
+    -- Relationships --
+    card_id : CHAR(36) (FK)
+    creator_id : INT (FK)
+    --
+    type : VARCHAR(50)
+    minimum_damage : DOUBLE
+    created_at : DATETIME
+}
+
+entity user_cards {
+    * user_id : INT (PK, FK)
+    * card_id : CHAR(36) (PK, FK)
+}
+
+entity user_deck {
+    * id : INT (PK)
+    -- Relationships --
+    user_id : INT (FK)
+    card_id : CHAR(36) (FK)
+    --
+}
+
+entity users {
+    * id : INT (PK)
+    * username : VARCHAR(50)
+    * password : VARCHAR(255)
+    * coins : INT
+    * name : VARCHAR(255)
+    * bio : TEXT
+    * image : VARCHAR(255)
+    * elo : INT
+    * wins : INT
+    * losses : INT
+}
+
+' Relationships
+battle_queue --> users : "user_id (FK)"
+battles --> users : "user1_id (FK)"
+battles --> users : "user2_id (FK)"
+package_cards --> packages : "package_id (FK)"
+package_cards --> cards : "card_id (FK)"
+trading_deals --> cards : "card_id (FK)"
+trading_deals --> users : "creator_id (FK)"
+user_cards --> users : "user_id (FK)"
+user_cards --> cards : "card_id (FK)"
+user_deck --> users : "user_id (FK)"
+user_deck --> cards : "card_id (FK)"
 
 @enduml
