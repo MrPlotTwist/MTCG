@@ -68,21 +68,21 @@ public class POSTRequestHandling {
 
         String userToken = authorizationHeader.substring("Bearer ".length()).trim();
         String username = userToken.split("-")[0];
-        System.out.println("[DEBUG] Battle request received from user: " + username);
+        //System.out.println("[DEBUG] Battle request received from user: " + username);
 
         synchronized (battleLock) {
             // Füge Spieler zur Battle-Queue hinzu
             Database.addToBattleQueue(username);
-            System.out.println("[DEBUG] User " + username + " added to battle queue");
+            //System.out.println("[DEBUG] User " + username + " added to battle queue");
 
             String opponent = Database.getFirstOpponent(username);
             if (opponent == null) {
-                System.out.println("[DEBUG] No opponent found for user: " + username);
+                //System.out.println("[DEBUG] No opponent found for user: " + username);
                 sendResponse(out, 200, "{\"message\":\"Waiting for an opponent...\"}");
                 return;
             }
 
-            System.out.println("[DEBUG] Opponent found: " + opponent + " for user: " + username);
+            //System.out.println("[DEBUG] Opponent found: " + opponent + " for user: " + username);
 
             // Entferne Spieler aus der Queue, wenn ein Gegner gefunden wurde
             Database.removeFromQueue(username);
@@ -100,9 +100,9 @@ public class POSTRequestHandling {
             Database.markBattleAsActive(username, opponent);
 
             // Starte den Kampf
-            System.out.println("[DEBUG] Starting battle between " + username + " and " + opponent);
+            //System.out.println("[DEBUG] Starting battle between " + username + " and " + opponent);
             BattleResult result = BattleHandling.startBattle(username, opponent);
-            System.out.println("[DEBUG] Battle completed between " + username + " and " + opponent);
+            //System.out.println("[DEBUG] Battle completed between " + username + " and " + opponent);
 
             // Entferne Battle-Markierung nach Abschluss
             Database.removeBattleMarker(username, opponent);

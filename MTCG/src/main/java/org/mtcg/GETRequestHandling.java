@@ -18,17 +18,17 @@ public class GETRequestHandling {
                 return;
             }
 
-            // Extrahiere Token und Benutzername
+            // Token und Benutzername
             String userToken = authorizationHeader.substring("Bearer ".length()).trim();
             String username = userToken.split("-")[0];
             System.out.println("Extrahierter Token: " + userToken);
             System.out.println("Benutzername: " + username);
 
             // URL in Pfad und Query-Parameter trennen
-            String path = url.split("\\?")[0]; // Extrahiere den Pfad (z.B. "/deck")
-            String query = url.contains("?") ? url.split("\\?")[1] : ""; // Extrahiere Query-Parameter (z.B. "format=plain")
+            String path = url.split("\\?")[0];
+            String query = url.contains("?") ? url.split("\\?")[1] : "";
 
-            // Verarbeite den Pfad
+            // Pfad
             if (path.equals("/cards")) {
                 handleCardsRequest(username, out);
             } else if (path.equals("/deck")) {
@@ -85,7 +85,6 @@ public class GETRequestHandling {
             // Deck des Benutzers abrufen
             List<String> deck = Database.getDeckForUser(username);
 
-            // Prüfen, ob das Deck leer ist
             if (deck == null || deck.isEmpty()) {
                 sendResponse(out, 200, "[]");
             } else if ("format=plain".equals(query)) {
@@ -161,6 +160,4 @@ public class GETRequestHandling {
         String response = gson.toJson(deals);
         sendResponse(out, 200, response);
     }
-
-
 }

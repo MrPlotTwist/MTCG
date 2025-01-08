@@ -17,15 +17,14 @@ public class TransactionHandling {
 
             // Prüfen, ob der Benutzer genügend Coins hat
             if (!Database.hasEnoughCoins(username, PACKAGE_COST)) {
-                sendResponse(out, 403, "{\"message\":\"Not enough coins\"}");
-                System.out.println("NOT ENOUGH COINS");
+                sendResponse(out, 403, "{\"message\":\"Not enough money\"}");
                 return;
             }
 
             // Wähle das älteste verfügbare Paket
             int packageId = Database.getOldestPackage();
             if (packageId == -1) {
-                sendResponse(out, 404, "{\"message\":\"No more packages available\"}");
+                sendResponse(out, 404, "{\"message\":\"No packages available\"}");
                 return;
             }
 

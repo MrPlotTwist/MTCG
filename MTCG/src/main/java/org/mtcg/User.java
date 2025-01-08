@@ -7,13 +7,12 @@ public class User {
     private String username;
     private String password;
     private int coins;
-    private List<Card> stack = new ArrayList<>();
-    private List<Card> deck = new ArrayList<>();
+    //private List<Card> stack = new ArrayList<>();
+    //private List<Card> deck = new ArrayList<>();
 
-    // Zusätzliche Felder
-    private String name; // Benutzername (z. B. "Max Mustermann")
-    private String bio;  // Kurzbeschreibung (z. B. "Gamer, Entwickler, etc.")
-    private String image; // Darstellung (z. B. ":-)")
+    private String name;
+    private String bio;
+    private String image;
 
     // Konstruktor
     public User(String username, String password) {
@@ -22,7 +21,6 @@ public class User {
         this.coins = 20; // Standardwert
     }
 
-    // Getter und Setter für neue Felder
     public String getName() {
         return name;
     }
@@ -47,7 +45,6 @@ public class User {
         this.image = image;
     }
 
-    // Bestehende Getter und Setter
     public int getCoins() {
         return coins;
     }
@@ -64,25 +61,17 @@ public class User {
         return password;
     }
 
-    public List<Card> getStack() {
-        return stack;
-    }
+//    public List<Card> getStack() {
+//        return stack;
+//    }
 
-    public void setStack(List<Card> stack) {
-        this.stack = stack;
-    }
-
-    public List<Card> getDeck() {
-        return deck;
-    }
-
-    public void setDeck(List<Card> deck) {
-        if (deck.size() == 4) {
-            this.deck = deck;
-        } else {
-            throw new IllegalArgumentException("Deck must contain exactly 4 cards.");
-        }
-    }
+//    public void setStack(List<Card> stack) {
+//        this.stack = stack;
+//    }
+//
+//    public List<Card> getDeck() {
+//        return deck;
+//    }
 
     // toString-Methode erweitern
     @Override

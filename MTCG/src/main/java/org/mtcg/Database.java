@@ -14,17 +14,11 @@ public class Database {
 
     // Verbindungsdetails als Konstanten
     private static final String URL = "jdbc:postgresql://localhost:5432/mtcg";
-    private static final String TEST_URL = "jdbc:postgresql://localhost:5432/mtcg_test";
     private static final String USER = "postgres";
-    private static final String PASSWORD = "tomi2002";
-    private static String currentDbUrl = URL;
-
-    public static void useTestDatabase() {
-        currentDbUrl = TEST_URL;
-    }
+    private static final String PASSWORD = "1234";
 
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(currentDbUrl, USER, PASSWORD);
+        return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 
     public static boolean login(String username, String password) {
@@ -306,36 +300,36 @@ public class Database {
         }
         return scoreboard;
     }
-    public static List<Card> getDeckForBattle(String username) {
-        String query = """
-        SELECT c.id, c.name, c.card_type, c.element_type, c.damage
-        FROM user_deck ud
-        JOIN cards c ON ud.card_id = c.id
-        JOIN users u ON ud.user_id = u.id
-        WHERE u.username = ?
-    """;
-        List<Card> deck = new ArrayList<>();
-
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            stmt.setString(1, username);
-            ResultSet rs = stmt.executeQuery();
-
-            while (rs.next()) {
-                Card card = new Card(
-                        rs.getString("id"),
-                        rs.getString("name"),
-                        rs.getString("card_type"),
-                        rs.getString("element_type"),
-                        rs.getDouble("damage")
-                );
-                deck.add(card);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return deck;
-    }
+//    public static List<Card> getDeckForBattle(String username) {
+//        String query = """
+//        SELECT c.id, c.name, c.card_type, c.element_type, c.damage
+//        FROM user_deck ud
+//        JOIN cards c ON ud.card_id = c.id
+//        JOIN users u ON ud.user_id = u.id
+//        WHERE u.username = ?
+//    """;
+//        List<Card> deck = new ArrayList<>();
+//
+//        try (Connection conn = getConnection();
+//             PreparedStatement stmt = conn.prepareStatement(query)) {
+//            stmt.setString(1, username);
+//            ResultSet rs = stmt.executeQuery();
+//
+//            while (rs.next()) {
+//                Card card = new Card(
+//                        rs.getString("id"),
+//                        rs.getString("name"),
+//                        rs.getString("card_type"),
+//                        rs.getString("element_type"),
+//                        rs.getDouble("damage")
+//                );
+//                deck.add(card);
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        return deck;
+//    }
     public static void updateELO(String username, int delta) {
         String query = """
         UPDATE users
@@ -506,7 +500,7 @@ public class Database {
             System.out.println("Starting trade process...");
             System.out.println("Deal ID: " + dealId + ", Username: " + username + ", Offered Card ID: " + offeredCardId);
 
-            // 1. Handelsangebot abrufen
+            // Handelsangebot abrufen
             try (PreparedStatement getDealStmt = conn.prepareStatement(getDealQuery)) {
                 getDealStmt.setString(1, dealId);
                 ResultSet dealRs = getDealStmt.executeQuery();
@@ -524,7 +518,7 @@ public class Database {
                 System.out.println("Trade deal details - Card to Trade: " + cardToTrade + ", Type: " + type +
                         ", Min Damage: " + minDamage + ", Creator ID: " + creatorId);
 
-                // 2. Überprüfen, ob die angebotene Karte gültig ist
+                // Überprüfen, ob die angebotene Karte gültig ist
                 System.out.println("Validating offered card: " + offeredCardId);
                 try (PreparedStatement validateCardStmt = conn.prepareStatement(validateCardQuery)) {
                     validateCardStmt.setString(1, offeredCardId);
@@ -540,7 +534,7 @@ public class Database {
                     }
                 }
 
-                // 2. Überprüfen, ob der Benutzer mit sich selbst handelt
+                // Überprüfen, ob der Benutzer mit sich selbst handelt
                 String checkUserQuery = "SELECT id FROM users WHERE username = ?";
                 try (PreparedStatement checkUserStmt = conn.prepareStatement(checkUserQuery)) {
                     checkUserStmt.setString(1, username);
@@ -560,7 +554,7 @@ public class Database {
                     }
                 }
 
-                // 3. Besitz der Karten tauschen
+                // Besitz der Karten tauschen
                 System.out.println("Updating ownership for cards...");
                 try (PreparedStatement updateStmt = conn.prepareStatement(updateOwnershipQuery)) {
                     // Besitzer der Karte im Deal ändern
@@ -586,7 +580,7 @@ public class Database {
                     }
                 }
 
-                // 4. Handelsangebot löschen
+                // Handelsangebot löschen
                 System.out.println("Deleting trade deal: " + dealId);
                 try (PreparedStatement deleteStmt = conn.prepareStatement(deleteDealQuery)) {
                     deleteStmt.setString(1, dealId);
@@ -730,18 +724,18 @@ public class Database {
         }
     }
 
-    public static boolean isBattleActive(String player1, String player2) throws SQLException {
-        String query = "SELECT 1 FROM active_battles WHERE (player1 = ? AND player2 = ?) OR (player1 = ? AND player2 = ?)";
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            stmt.setString(1, player1);
-            stmt.setString(2, player2);
-            stmt.setString(3, player2);
-            stmt.setString(4, player1);
-            ResultSet rs = stmt.executeQuery();
-            return rs.next();
-        }
-    }
+//    public static boolean isBattleActive(String player1, String player2) throws SQLException {
+//        String query = "SELECT 1 FROM active_battles WHERE (player1 = ? AND player2 = ?) OR (player1 = ? AND player2 = ?)";
+//        try (Connection conn = getConnection();
+//             PreparedStatement stmt = conn.prepareStatement(query)) {
+//            stmt.setString(1, player1);
+//            stmt.setString(2, player2);
+//            stmt.setString(3, player2);
+//            stmt.setString(4, player1);
+//            ResultSet rs = stmt.executeQuery();
+//            return rs.next();
+//        }
+//    }
 
     public static void markBattleAsActive(String player1, String player2) throws SQLException {
         String query = "INSERT INTO active_battles (player1, player2) VALUES (?, ?)";
@@ -824,9 +818,4 @@ public class Database {
         }
         return stack;
     }
-
-
-
-
-
 }

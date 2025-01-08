@@ -16,6 +16,7 @@ class TESTS {
             stmt.execute("TRUNCATE TABLE user_cards CASCADE;");
             stmt.execute("TRUNCATE TABLE users CASCADE;");
             stmt.execute("TRUNCATE TABLE cards CASCADE;");
+            stmt.execute("TRUNCATE TABLE packages CASCADE;");
         }
     }
 
@@ -77,8 +78,7 @@ class TESTS {
     void testGetCardsForUser() throws SQLException {
         try (Connection conn = Database.getConnection();
              Statement stmt = conn.createStatement()) {
-            // Gültige UUIDs für die Karten verwenden
-            String cardId = "845f0dc7-37d0-426e-994e-43fc3ac83c08";
+
             stmt.execute("""
             INSERT INTO cards (id, name, damage, element_type, card_type) 
             VALUES ('845f0dc7-37d0-426e-994e-43fc3ac83c08', 'WaterGoblin', 10.0, 'water', 'monster');
@@ -224,7 +224,6 @@ class TESTS {
         assertEquals(1, deals.size());
         Trading deal = deals.get(0);
         assertEquals("dfdd758f-649c-40f9-ba3a-8657f4b3439f", deal.getId().toString());
-        //assertEquals("WaterGoblin", deal.getCardId().toString());
         assertEquals("monster", deal.getType());
     }
 
@@ -241,13 +240,12 @@ class TESTS {
         """);
         }
 
-        // Aufruf der Methode zur Löschung des Handelsdeals
         boolean result = Database.deleteTradingDeal("dfdd758f-649c-40f9-ba3a-8657f4b3439f", "creator");
         assertTrue(result);
 
         // Verifizierung, dass der Handelsdeal gelöscht wurde
         try (Connection conn = Database.getConnection();
-             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM trading_deals WHERE id = CAST(? AS UUID)")) { // CAST hinzugefügt
+             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM trading_deals WHERE id = CAST(? AS UUID)")) {
             stmt.setString(1, "dfdd758f-649c-40f9-ba3a-8657f4b3439f");
             ResultSet rs = stmt.executeQuery();
             assertFalse(rs.next());
@@ -306,7 +304,6 @@ class TESTS {
             // Benutzer-ID abrufen
             int userId = Database.getUserId("testuser");
 
-            // Überprüfen, ob die richtige ID zurückgegeben wird
             assertEquals(1, userId);
         } catch (Exception e) {
             fail("Exception should not be thrown: " + e.getMessage());
@@ -376,7 +373,6 @@ class TESTS {
     void testGetOldestPackage() throws Exception {
         try (Connection conn = Database.getConnection();
              Statement stmt = conn.createStatement()) {
-            // Lösche alle vorhandenen Pakete, um sicherzustellen, dass die Testumgebung sauber ist
             stmt.execute("DELETE FROM packages");
 
             // Zwei Pakete einfügen
@@ -437,7 +433,6 @@ class TESTS {
         // Methode testen
         Database.assignCardsToUser("testuser", 1);
 
-        // Überprüfen, ob die Karte dem Benutzer zugewiesen wurde
         try (Connection conn = Database.getConnection();
              PreparedStatement stmt = conn.prepareStatement("SELECT card_id FROM user_cards WHERE user_id = 1");
              ResultSet rs = stmt.executeQuery()) {

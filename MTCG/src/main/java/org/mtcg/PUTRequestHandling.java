@@ -34,7 +34,6 @@ public class PUTRequestHandling {
     private static void handleDeckUpdate(String body, String authorizationHeader, OutputStream out) throws Exception {
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
             sendResponse(out, 401, "{\"message\":\"Unauthorized: Missing or invalid token\"}");
-            System.out.println("INVALID TOKEN");
             return;
         }
 

@@ -12,21 +12,12 @@ public class Deck {
 
     // Karten hinzufügen
     public void addCard(Card card) {
-        if (cards.size() < 4) {
-            cards.add(card);
-        } else {
-            throw new IllegalStateException("A deck can only contain 4 cards.");
-        }
+        cards.add(card);
     }
 
     // Karten entfernen
     public void removeCard(Card card) {
         cards.remove(card);
-    }
-
-    // Deck mischen
-    public void shuffle() {
-        java.util.Collections.shuffle(cards);
     }
 
     // Zugriff auf die Karten

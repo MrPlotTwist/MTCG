@@ -15,14 +15,13 @@ public class PackageHandling {
             // Liste zur Speicherung der Karteninformationen
             ArrayList<String> cardList = new ArrayList<>();
 
-            // Entferne die eckigen Klammern und teile den String nach "}," auf
             String[] cardDataArray = body.replace("[", "").replace("]", "").split("},");
             for (String cardData : cardDataArray) {
                 if (!cardData.endsWith("}")) {
                     cardData += "}";
                 }
 
-                // Verarbeite den aktuellen Karten-String
+                // Karteneigenschaften
                 cardData = cardData.replaceAll("[{\"]", "").trim();
                 String[] cardFields = cardData.split(",");
                 String id = cardFields[0].split(":")[1].trim();

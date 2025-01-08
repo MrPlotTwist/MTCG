@@ -7,20 +7,13 @@ public class BattleHandling {
     private static final int MAX_ROUNDS = 100;
 
     public static BattleResult startBattle(String player1, String player2) {
-        // Debugging: Battle-Start
-        System.out.println("[DEBUG] Starting battle between " + player1 + " and " + player2);
-
-        // Booster-Flags für die Spieler
-        boolean player1UsedBooster = false;
-        boolean player2UsedBooster = false;
 
         // Decks der Spieler aus der Datenbank abrufen
         Deck deck1 = Database.getDeckForPlayer(player1);
         Deck deck2 = Database.getDeckForPlayer(player2);
 
-        // Überprüfen, ob Decks konfiguriert sind
         if (deck1.getCards().isEmpty() || deck2.getCards().isEmpty()) {
-            System.out.println("[DEBUG] One or both players have no configured deck.");
+            //System.out.println("[DEBUG] One or both players have no configured deck.");
             return new BattleResult(false, "One or both players do not have a configured deck.");
         }
 
@@ -62,15 +55,15 @@ public class BattleHandling {
             boolean player1Booster = false;
             boolean player2Booster = false;
 
-            if (!player1UsedBooster && Math.random() > 0.7) {
+            // Booster-Flags für die Spieler (Mandatory Feature)
+
+            if (Math.random() > 0.85 && rounds % 2 == 0) {
                 player1Booster = true;
-                player1UsedBooster = true;
                 log.add(player1 + " uses a damage booster on " + card1.getName() + "!");
             }
 
-            if (!player2UsedBooster && Math.random() > 0.7) {
+            if (Math.random() > 0.85 && rounds % 2 == 0) {
                 player2Booster = true;
-                player2UsedBooster = true;
                 log.add(player2 + " uses a damage booster on " + card2.getName() + "!");
             }
 
@@ -86,13 +79,11 @@ public class BattleHandling {
                 log.add(player1 + " wins this round.");
                 player1Wins++;
                 deck2.removeCard(card2);
-                deck1.removeCard(card1);
                 deck1.addCard(card2); // Gegnerische Karte übernehmen
             } else if (damage2 > damage1) {
                 log.add(player2 + " wins this round.");
                 player2Wins++;
                 deck1.removeCard(card1);
-                deck2.removeCard(card2);
                 deck2.addCard(card1); // Gegnerische Karte übernehmen
             } else {
                 log.add("Round ends in a draw.");
@@ -139,7 +130,6 @@ public class BattleHandling {
             double multiplier = getElementMultiplier(attacker.getElement(), defender.getElement());
             return baseDamage * multiplier;
         }
-
         return baseDamage;
     }
 
@@ -162,15 +152,6 @@ public class BattleHandling {
             return "FireElf evades Dragon's attack. " + card1.getOwner() + " wins this round.";
         }
         return null;
-    }
-
-    private static double calculateDamage(Card attacker, Card defender) {
-        if (attacker.getType().equals("Spell") || defender.getType().equals("Spell")) {
-            // Element-basierte Effizienz
-            double multiplier = getElementMultiplier(attacker.getElement(), defender.getElement());
-            return attacker.getDamage() * multiplier;
-        }
-        return attacker.getDamage(); // Monster-Kampf: Schaden unverändert
     }
 
     private static double getElementMultiplier(String attackerElement, String defenderElement) {
