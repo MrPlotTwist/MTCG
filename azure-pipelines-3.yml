@@ -1,0 +1,20 @@
+trigger:
+- main
+
+pool:
+  name: tomPool  
+  demands:
+  - agent.name -equals testagent  
+
+steps:
+- task: AzureKeyVault@2
+  inputs:
+    azureSubscription: 'Keys'        
+    KeyVaultName: 'mtcgSecrets'      
+    SecretsFilter: 'dbUser'          
+    RunAsPreJob: false
+
+- script: |
+    echo "Secret DbUser erfolgreich geladen:"
+    echo "Wert: $(DbUser)"
+  displayName: "Test: Zugriff auf Secret"
