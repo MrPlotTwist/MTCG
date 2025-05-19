@@ -1,0 +1,41 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  vmHost: '20.121.66.233'        
+  vmUser: 'student'                
+  jarName: 'MTCG-1.0-SNAPSHOT.jar' 
+
+steps:
+- task: DownloadSecureFile@1
+  name: sshKey
+  inputs:
+    secureFile: 'projecthostVM_key'    
+
+- script: |
+    echo "Verbindung zur VM"
+    chmod 600 $(sshKey.secureFilePath)
+    
+    ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no $(vmUser)@$(vmHost) << EOF
+      sudo apt update
+      sudo apt install -y openjdk-21-jre
+      mkdir -p ~/deploy
+      pkill -f java || true 
+    EOF
+
+- task: CopyFilesOverSSH@0
+  inputs:
+    sshEndpoint: 'MyVmServiceConnection' 
+    sourceFolder: '$(System.DefaultWorkingDirectory)/target'
+    contents: '**/*.jar'
+    targetFolder: '/home/student/project' 
+
+- script: |
+    echo "Starte Anwendung"
+    ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no $(vmUser)@$(vmHost) << EOF
+      nohup java -jar ~/deploy/$(jarName) > ~/deploy/output.log 2>&1 &
+    EOF
+  displayName: 'Starte MTCG-Server'
