@@ -13,7 +13,7 @@ steps:
 - task: DownloadSecureFile@1
   name: sshKey
   inputs:
-    secureFile: 'projecthostVM_key'    
+    secureFile: 'projecthostVM_key.pem'    
 
 - script: |
     echo "Verbindung zur VM"
