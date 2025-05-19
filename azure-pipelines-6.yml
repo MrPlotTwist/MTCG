@@ -92,7 +92,7 @@ stages:
         - task: Docker@2
           displayName: 'Build and Push Docker Image'
           inputs:
-            containerRegistry: 'DockerHubServiceConnection'  
+            containerRegistry: 'DockerConnection'  
             repository: '$(dockerUsername)/mtcg'
             command: 'buildAndPush'
             Dockerfile: '**/Dockerfile'
