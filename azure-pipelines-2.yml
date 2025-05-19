@@ -1,0 +1,16 @@
+
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: AzureKeyVault@2
+  inputs:
+    azureSubscription: 'Keys'              
+    KeyVaultName: 'mtcgSecrets'            
+    SecretsFilter: '*'                     
+
+- script: |
+    echo "Test-Zugriff auf Secret: $(dbUser)"
