@@ -5,37 +5,54 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  vmHost: '20.121.66.233'        
-  vmUser: 'student'                
-  jarName: 'MTCG-1.0-SNAPSHOT.jar' 
+  vmHost: '20.121.66.233'             # Deine VM-IP
+  vmUser: 'student'                   # Benutzername auf der VM
+  jarName: 'MTCG-1.0-SNAPSHOT.jar'    # JAR-Dateiname
+  projectPath: 'MTCG'                 # Pfad zum Projektordner (relativ zum Repo-Root)
 
 steps:
+# Maven-Build
+- task: Maven@3
+  inputs:
+    mavenPomFile: '$(projectPath)/pom.xml'      # Pfad zur pom.xml
+    goals: 'clean package'
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: '1.11'
+    mavenOptions: '-Xmx3072m'
+    publishJUnitResults: false
+  displayName: 'Baue JAR-Datei mit Maven'
+
+# SSH-Key herunterladen
 - task: DownloadSecureFile@1
   name: sshKey
   inputs:
-    secureFile: 'projecthostVM_key.pem'    
+    secureFile: 'projecthostVM_key.pem'         # Name der .pem-Datei in Secure Files
 
+# VM vorbereiten
 - script: |
-    echo "Verbindung zur VM"
+    echo "Verbindung zur VM vorbereiten"
     chmod 600 $(sshKey.secureFilePath)
-    
     ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no $(vmUser)@$(vmHost) << EOF
       sudo apt update
       sudo apt install -y openjdk-21-jre
       mkdir -p ~/deploy
-      pkill -f java || true 
+      pkill -f java || true
     EOF
+  displayName: 'Installiere Java & stoppe altes Programm'
 
+# Kopiere JAR auf die VM
 - task: CopyFilesOverSSH@0
   inputs:
-    sshEndpoint: 'MyVmServiceConnection' 
-    sourceFolder: '$(System.DefaultWorkingDirectory)/target'
+    sshEndpoint: 'MyVmServiceConnection'          # In Azure DevOps als SSH-Verbindung anlegen!
+    sourceFolder: '$(System.DefaultWorkingDirectory)/$(projectPath)/target'
     contents: '**/*.jar'
-    targetFolder: '/home/student/project' 
+    targetFolder: '/home/student/deploy'          # Zielordner auf der VM
+  displayName: 'Übertrage JAR auf VM'
 
+# Starte Anwendung auf der VM
 - script: |
-    echo "Starte Anwendung"
+    echo "Starte Anwendung auf der VM"
     ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no $(vmUser)@$(vmHost) << EOF
       nohup java -jar ~/deploy/$(jarName) > ~/deploy/output.log 2>&1 &
     EOF
-  displayName: 'Starte MTCG-Server'
+  displayName: 'Starte MTCG-Server auf VM'
