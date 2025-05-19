@@ -1,0 +1,21 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest  
+
+variables:
+  keyVaultName: 'mtcgSecrets'   
+
+steps:
+- task: AzureKeyVault@2
+  inputs:
+    azureSubscription: 'Keys'  
+    KeyVaultName: '$(mtcgSecrets)'
+    SecretsFilter: '*'
+    RunAsPreJob: true
+
+- script: |
+    echo "Secret erfolgreich geladen:"
+    echo "Benutzername: $(dbUser)"
+  displayName: "Test Zugriff auf Secret"
