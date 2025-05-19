@@ -11,7 +11,7 @@ steps:
 - task: AzureKeyVault@2
   inputs:
     azureSubscription: 'Keys'  
-    KeyVaultName: '$(mtcgSecrets)'
+    KeyVaultName: '$(keyVaultName)'    
     SecretsFilter: '*'
     RunAsPreJob: true
 
